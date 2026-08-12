@@ -1,0 +1,25 @@
+# Build artifacts
+/build
+*.vst3
+*.app
+*.component
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+
+# JUCE generated
+JuceLibraryCode/
+
+# Signing
+*.provisionprofile
