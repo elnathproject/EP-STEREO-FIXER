@@ -93,6 +93,41 @@ void EPStereoFixerAudioProcessor::prepareToPlay(double newSampleRate, int)
     outputMeterL = 0.0f;
     outputMeterR = 0.0f;
     correlation = 0.0f;
+
+    updateBandFilters();
+    for (auto& s : bandCorrState)
+    {
+        s.powerL = 0.0f;
+        s.powerR = 0.0f;
+        s.corrAccum = 0.0f;
+    }
+    for (auto& c : bandCorrelation)
+        c.store(0.0f);
+}
+
+void EPStereoFixerAudioProcessor::updateBandFilters()
+{
+    for (int i = 0; i < numCorrBands; ++i)
+    {
+        const float freq = bandFrequencies[i];
+        const float Q = 1.4f;
+        const float w0 = juce::MathConstants<float>::twoPi * freq / static_cast<float>(sampleRate);
+        const float sinW0 = std::sin(w0);
+        const float cosW0 = std::cos(w0);
+        const float alpha = sinW0 / (2.0f * Q);
+
+        const float a0 = 1.0f + alpha;
+        bandFilters[i].b0 = (sinW0 * 0.5f) / a0;
+        bandFilters[i].b1 = 0.0f;
+        bandFilters[i].b2 = -(sinW0 * 0.5f) / a0;
+        bandFilters[i].a1 = (-2.0f * cosW0) / a0;
+        bandFilters[i].a2 = (1.0f - alpha) / a0;
+
+        bandFilters[i].x1L = bandFilters[i].x2L = 0.0f;
+        bandFilters[i].y1L = bandFilters[i].y2L = 0.0f;
+        bandFilters[i].x1R = bandFilters[i].x2R = 0.0f;
+        bandFilters[i].y1R = bandFilters[i].y2R = 0.0f;
+    }
 }
 
 void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
@@ -241,6 +276,19 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         const float denom = std::sqrt(powerL * powerR) + 1e-9f;
         correlation = std::clamp(corrAccum / denom, -1.0f, 1.0f);
 
+        if ((i & 3) == 0)
+        {
+            for (int b = 0; b < numCorrBands; ++b)
+            {
+                const float bL = bandFilters[b].processL(outL);
+                const float bR = bandFilters[b].processR(outR);
+                auto& bs = bandCorrState[b];
+                bs.powerL = bs.powerL * corrDecay + bL * bL * (1.0f - corrDecay);
+                bs.powerR = bs.powerR * corrDecay + bR * bR * (1.0f - corrDecay);
+                bs.corrAccum = bs.corrAccum * corrDecay + bL * bR * (1.0f - corrDecay);
+            }
+        }
+
         if (++scopeCounter >= scopeSkip)
         {
             scopeCounter = 0;
@@ -260,6 +308,13 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     balanceMeter.store(balanceSmoothed);
     midMeter.store(outputMeterMid);
     sideMeter.store(outputMeterSide);
+
+    for (int b = 0; b < numCorrBands; ++b)
+    {
+        const auto& bs = bandCorrState[b];
+        const float d = std::sqrt(bs.powerL * bs.powerR) + 1e-9f;
+        bandCorrelation[b].store(std::clamp(bs.corrAccum / d, -1.0f, 1.0f));
+    }
 }
 
 juce::AudioProcessorEditor* EPStereoFixerAudioProcessor::createEditor()

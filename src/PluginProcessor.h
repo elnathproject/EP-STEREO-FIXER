@@ -46,6 +46,10 @@ public:
     const float* getScopeR() const { return scopeR.data(); }
     int getScopeWriteIndex() const { return scopeWriteIndex.load(); }
 
+    static constexpr int numCorrBands = 12;
+    float getBandCorrelation(int band) const { return bandCorrelation[band].load(); }
+    float getBandFrequency(int band) const { return bandFrequencies[band]; }
+
 private:
     juce::AudioProcessorValueTreeState parameters;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -88,6 +92,36 @@ private:
     std::atomic<int> scopeWriteIndex { 0 };
     int scopeCounter = 0;
     int scopeSkip = 1;
+
+    static constexpr float bandFrequencies[numCorrBands] = {
+        40.0f, 80.0f, 160.0f, 315.0f, 630.0f, 1250.0f,
+        2500.0f, 4000.0f, 6300.0f, 8000.0f, 12500.0f, 16000.0f
+    };
+
+    struct BandFilter {
+        float b0 = 0, b1 = 0, b2 = 0, a1 = 0, a2 = 0;
+        float x1L = 0, x2L = 0, y1L = 0, y2L = 0;
+        float x1R = 0, x2R = 0, y1R = 0, y2R = 0;
+        float processL(float in) {
+            float out = b0 * in + b1 * x1L + b2 * x2L - a1 * y1L - a2 * y2L;
+            x2L = x1L; x1L = in; y2L = y1L; y1L = out;
+            return out;
+        }
+        float processR(float in) {
+            float out = b0 * in + b1 * x1R + b2 * x2R - a1 * y1R - a2 * y2R;
+            x2R = x1R; x1R = in; y2R = y1R; y1R = out;
+            return out;
+        }
+    };
+
+    std::array<BandFilter, numCorrBands> bandFilters;
+    struct BandCorrelationState {
+        float powerL = 0, powerR = 0, corrAccum = 0;
+    };
+    std::array<BandCorrelationState, numCorrBands> bandCorrState {};
+    std::array<std::atomic<float>, numCorrBands> bandCorrelation {};
+
+    void updateBandFilters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoFixerAudioProcessor)
 };

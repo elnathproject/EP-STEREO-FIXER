@@ -285,6 +285,85 @@ void PhaseMeter::paint(juce::Graphics& g)
     g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
 }
 
+Correlometer::Correlometer(EPStereoFixerAudioProcessor& p) : processor(p)
+{
+    setTooltip("Frequency correlation: green = correlated, red = out-of-phase");
+}
+
+void Correlometer::update()
+{
+    for (int i = 0; i < EPStereoFixerAudioProcessor::numCorrBands; ++i)
+        values[i] = processor.getBandCorrelation(i);
+    repaint();
+}
+
+void Correlometer::paint(juce::Graphics& g)
+{
+    auto area = getLocalBounds().toFloat();
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(area, 3.0f);
+
+    const float pad = 4.0f;
+    const float plotL = area.getX() + pad;
+    const float plotR = area.getRight() - pad;
+    const float plotT = area.getY() + pad;
+    const float plotB = area.getBottom() - 14.0f;
+    const float plotW = plotR - plotL;
+    const float plotH = plotB - plotT;
+    const float midY = plotT + plotH * 0.5f;
+
+    g.setColour(juce::Colour(0x18ffffff));
+    g.drawLine(plotL, midY, plotR, midY, 0.5f);
+
+    g.setFont(juce::Font(juce::FontOptions(8.0f, juce::Font::plain)));
+    g.setColour(Colours::textDim.withAlpha(0.4f));
+    g.drawText("+1", juce::Rectangle<float>(plotR + 2.0f, plotT - 4.0f, 16.0f, 10.0f), juce::Justification::centredLeft);
+    g.drawText("-1", juce::Rectangle<float>(plotR + 2.0f, plotB - 6.0f, 16.0f, 10.0f), juce::Justification::centredLeft);
+
+    const int n = EPStereoFixerAudioProcessor::numCorrBands;
+    const float barW = plotW / static_cast<float>(n);
+
+    for (int i = 0; i < n; ++i)
+    {
+        const float x = plotL + static_cast<float>(i) * barW;
+        const float corr = values[i];
+        const float h = std::abs(corr) * plotH * 0.5f;
+
+        juce::Colour col;
+        if (corr >= 0.0f)
+            col = Colours::meterGreen.withAlpha(0.5f + corr * 0.5f);
+        else
+            col = Colours::meterRed.withAlpha(0.5f + std::abs(corr) * 0.5f);
+
+        if (corr >= 0.0f)
+        {
+            g.setColour(col);
+            g.fillRoundedRectangle(x + 1.0f, midY - h, barW - 2.0f, h, 1.5f);
+            g.setColour(col.withAlpha(0.15f));
+            g.fillRoundedRectangle(x, midY - h - 1.0f, barW, h + 2.0f, 2.0f);
+        }
+        else
+        {
+            g.setColour(col);
+            g.fillRoundedRectangle(x + 1.0f, midY, barW - 2.0f, h, 1.5f);
+            g.setColour(col.withAlpha(0.15f));
+            g.fillRoundedRectangle(x, midY - 1.0f, barW, h + 2.0f, 2.0f);
+        }
+    }
+
+    g.setFont(juce::Font(juce::FontOptions(7.0f, juce::Font::plain)));
+    g.setColour(Colours::textDim.withAlpha(0.5f));
+    const char* freqLabels[12] = { "40", "80", "160", "315", "630", "1.2k", "2.5k", "4k", "6.3k", "8k", "12k", "16k" };
+    for (int i = 0; i < n; ++i)
+    {
+        const float x = plotL + static_cast<float>(i) * barW;
+        g.drawText(freqLabels[i], juce::Rectangle<float>(x, plotB + 1.0f, barW, 12.0f), juce::Justification::centred);
+    }
+
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(area, 3.0f, 1.0f);
+}
+
 BalanceMeter::BalanceMeter() {}
 
 void BalanceMeter::setBalance(float value) { balance = juce::jlimit(-1.0f, 1.0f, value); repaint(); }
@@ -463,7 +542,7 @@ void EPStereoFixerAudioProcessorEditor::setupSectionLabel(juce::Label& label, co
 }
 
 EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFixerAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), scope(audioProcessor)
+    : AudioProcessorEditor(&p), audioProcessor(p), scope(audioProcessor), correlometer(audioProcessor)
 {
     setLookAndFeel(&epLookAndFeel);
 
@@ -546,6 +625,7 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     addAndMakeVisible(balanceMeter);
     addAndMakeVisible(midSideMeter);
     addAndMakeVisible(scope);
+    addAndMakeVisible(correlometer);
 
     leftMeter.setTooltip("Output peak level for the left channel");
     rightMeter.setTooltip("Output peak level for the right channel");
@@ -575,10 +655,10 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     bypassButton.setToggleState(bypassParam != nullptr && *bypassParam, juce::dontSendNotification);
 
     startTimerHz(30);
-    setSize(700, 560);
+    setSize(700, 640);
 
     setResizable(true, true);
-    setResizeLimits(700, 560, 1400, 1120);
+    setResizeLimits(700, 640, 1400, 1280);
 }
 
 EPStereoFixerAudioProcessorEditor::~EPStereoFixerAudioProcessorEditor()
@@ -690,6 +770,9 @@ void EPStereoFixerAudioProcessorEditor::resized()
     metersLabel.setBounds(metersInner.removeFromTop(18));
     metersInner.removeFromTop(4);
 
+    auto corrRow = metersInner.removeFromBottom(70);
+    metersInner.removeFromBottom(6);
+
     auto dbRow = metersInner.removeFromTop(18);
     auto meterRow = metersInner;
 
@@ -708,6 +791,8 @@ void EPStereoFixerAudioProcessorEditor::resized()
     meterRow.removeFromLeft(10);
     const int scopeSz = meterRow.getHeight();
     scope.setBounds(meterRow.removeFromLeft(scopeSz).reduced(2));
+
+    correlometer.setBounds(corrRow.reduced(2));
 }
 
 void EPStereoFixerAudioProcessorEditor::setFormat(int index)
@@ -861,6 +946,7 @@ void EPStereoFixerAudioProcessorEditor::timerCallback()
     phaseMeter.setCorrelation(audioProcessor.getPhaseMeter());
     balanceMeter.setBalance(audioProcessor.getBalance());
     midSideMeter.setLevels(audioProcessor.getMidLevel(), audioProcessor.getSideLevel());
+    correlometer.update();
     scope.repaint();
 
     leftDbLabel.setText(juce::Decibels::gainToDecibels(leftLevel, -60.0f) > -59.0f

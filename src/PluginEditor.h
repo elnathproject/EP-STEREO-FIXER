@@ -97,6 +97,19 @@ private:
     EPStereoFixerAudioProcessor& processor;
 };
 
+class Correlometer : public juce::Component,
+                     public juce::SettableTooltipClient
+{
+public:
+    Correlometer(EPStereoFixerAudioProcessor& p);
+    void update();
+    void paint(juce::Graphics& g) override;
+
+private:
+    EPStereoFixerAudioProcessor& processor;
+    std::array<float, EPStereoFixerAudioProcessor::numCorrBands> values {};
+};
+
 class BalanceMeter : public juce::Component,
                      public juce::SettableTooltipClient
 {
@@ -179,6 +192,7 @@ private:
     BalanceMeter balanceMeter;
     MidSideMeter midSideMeter;
     Scope scope;
+    Correlometer correlometer;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> widthAttachment;
