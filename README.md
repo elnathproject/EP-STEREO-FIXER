@@ -6,6 +6,8 @@ A JUCE-based stereo field manipulation plugin (VST3 / Standalone) inspired by th
 
 **Developer:** EP | **Category:** Fx | Spatial
 
+![EP STEREO FIXER](ep_sereo_fixer.png)
+
 ---
 
 ## Features
