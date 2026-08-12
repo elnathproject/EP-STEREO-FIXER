@@ -655,10 +655,10 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     bypassButton.setToggleState(bypassParam != nullptr && *bypassParam, juce::dontSendNotification);
 
     startTimerHz(30);
-    setSize(700, 640);
+    setSize(700, 670);
 
     setResizable(true, true);
-    setResizeLimits(700, 640, 1400, 1280);
+    setResizeLimits(700, 670, 1400, 1340);
 }
 
 EPStereoFixerAudioProcessorEditor::~EPStereoFixerAudioProcessorEditor()
@@ -770,7 +770,7 @@ void EPStereoFixerAudioProcessorEditor::resized()
     metersLabel.setBounds(metersInner.removeFromTop(18));
     metersInner.removeFromTop(4);
 
-    auto corrRow = metersInner.removeFromBottom(70);
+    auto corrRow = metersInner.removeFromBottom(100);
     metersInner.removeFromBottom(6);
 
     auto dbRow = metersInner.removeFromTop(18);
