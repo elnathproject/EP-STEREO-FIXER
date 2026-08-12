@@ -1,70 +1,119 @@
 # EP STEREO FIXER
 
-A simple JUCE stereo-format tool inspired by the DaVinci Resolve Stereo Fixer panel.
+A JUCE-based stereo field manipulation plugin (VST3 / Standalone) inspired by the DaVinci Resolve Stereo Fixer panel. Designed for mixing, mastering and post-production workflows where precise stereo control is needed.
 
-## Interface
+**Developer:** EP | **Category:** Fx | Spatial
 
-- **Format** row (eight exclusive buttons):
-  - **Stereo** — standard stereo passthrough.
-  - **Flip Channels** — swap left and right.
-  - **Sum L+R** — mono sum on both outputs.
-  - **Left** — left channel on both outputs.
-  - **Right** — right channel on both outputs.
-  - **Mid/Side** — encode to Mid/Side; gain left controls Mid, gain right controls Side.
-  - **Solo Mid** — output only the Mid component.
-  - **Solo Side** — output only the Side component.
-- **Utility** row — Invert L, Invert R, Auto Gain, Bypass.
-- **Input Gain** — knob to trim the level before format processing.
-- **Width** — knob to adjust stereo width using Mid/Side scaling (0 % = mono, 100 % = normal, 200 % = double width).
-- **Output Gain** — two rotary knobs (-18 dB to +18 dB).
-- **Link** — chain icon between the two output gain knobs; when enabled both knobs move together.
-- **Meters** — two peak meters (L / R) with peak dB readouts, a phase/correlation meter and a stereo goniometer.
+---
 
-Hovering any control shows an English description.
+## Features
+
+### Format Modes
+
+Eight exclusive modes for stereo signal routing:
+
+| Mode | Description |
+|------|-------------|
+| **Stereo** | Standard stereo passthrough |
+| **Flip** | Swap left and right channels |
+| **Sum L+R** | Mono sum on both outputs |
+| **Left** | Left channel on both outputs |
+| **Right** | Right channel on both outputs |
+| **Mid/Side** | M/S encode; Gain L controls Mid, Gain R controls Side |
+| **Solo Mid** | Output only the Mid component |
+| **Solo Side** | Output only the Side component |
+
+### Controls
+
+- **Input Gain** — trim the level before format processing (-18 to +18 dB)
+- **Width** — stereo width via Mid/Side scaling (0% = mono, 100% = normal, 200% = extra wide)
+- **Gain L / Gain R** — output gain per channel (-18 to +18 dB)
+- **Link** — locks both output gain knobs together
+- **Phase L / Phase R** — invert polarity of each channel (linked automatically in mono modes)
+- **Auto Gain** — peak-based automatic level compensation
+- **Bypass** — bypass all processing
+
+### Meters
+
+- **Peak meters (L/R)** — vertical bars with gradient (green/yellow/red), peak hold and dB readout
+- **Phase meter** — correlation indicator (left = mono, right = out-of-phase)
+- **Stereo Balance** — horizontal bar showing L/R balance
+- **Mid/Side levels** — dual vertical bars showing Mid and Side signal levels
+- **Stereo Goniometer** — X/Y scope of the stereo image
+
+### GUI
+
+- Custom look and feel with teal/cyan accent colour scheme
+- Dark theme with rounded section panels (Format, Controls, Meters)
+- Resizable window (default 700x560, up to 2x)
+- English tooltips on all controls
+
+---
 
 ## Requirements
 
-- CMake 3.16 or later
-- A C++17 compiler
-- The JUCE framework (https://github.com/juce-framework/JUCE)
+- **CMake** 3.16 or later
+- **C++17** compiler (Clang, GCC, MSVC)
+- **JUCE** framework — https://github.com/juce-framework/JUCE
 
 ## Build
 
-Clone JUCE next to this project or anywhere on disk, then set `JUCE_DIR` to its root:
+Clone JUCE anywhere on disk, then point `JUCE_DIR` to it:
 
 ```bash
 export JUCE_DIR="$HOME/JUCE"
-cd stereo_field_manipulator_vst
+cd EP-STEREO-FIXER
 
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
-On Apple Silicon add `-DCMAKE_OSX_ARCHITECTURES=arm64` to the configure step.
+### Platform Notes
+
+| Platform | Notes |
+|----------|-------|
+| **macOS (Apple Silicon)** | Add `-DCMAKE_OSX_ARCHITECTURES=arm64` to the configure step |
+| **macOS (Intel)** | Add `-DCMAKE_OSX_ARCHITECTURES=x86_64` |
+| **macOS (Universal)** | Add `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` |
+| **Windows** | Use Visual Studio 2019+ or MinGW with CMake |
+| **Linux** | Install ALSA and X11 dev packages (`libasound2-dev`, `libx11-dev`, etc.) |
 
 ## Outputs
 
-After building you will find the binaries under `build/`:
+After building, binaries are in `build/EPStereoFixer_artefacts/Release/`:
 
-- `EP STEREO FIXER.vst3`
-- `EP STEREO FIXER.app` (Standalone)
+- `VST3/EP STEREO FIXER.vst3`
+- `Standalone/EP STEREO FIXER.app` (macOS) or `.exe` (Windows)
 
 ## Installation
 
+### macOS
+
 ```bash
-mkdir -p "$HOME/Library/Audio/Plug-Ins/VST3"
 cp -R "build/EPStereoFixer_artefacts/Release/VST3/EP STEREO FIXER.vst3" \
     "$HOME/Library/Audio/Plug-Ins/VST3/"
 ```
 
-Restart your DAW after copying the plugin.
+### Windows
 
-## Notes
+Copy `EP STEREO FIXER.vst3` to `C:\Program Files\Common Files\VST3\`
 
-- Developer: **EP**.
-- VST3 category: **Fx|Spatial**.
-- The GUI is resizable between the default size and double the default size.
-- Gain parameters are smoothed to avoid zipper noise.
-- Auto Gain is a peak-based automatic level control; it reacts smoothly to avoid pumping.
-- The phase meter shows correlation: **left = mono**, **right = out-of-phase**.
-- The goniometer draws the stereo image with X = left and Y = right.
+### Linux
+
+Copy `EP STEREO FIXER.vst3` to `~/.vst3/`
+
+After installing, restart your DAW or run a VST3 re-scan.
+
+---
+
+## Technical Details
+
+- All gain parameters are smoothed to avoid zipper noise
+- Auto Gain uses peak-based AGC with smooth decay to prevent pumping
+- Phase controls are automatically linked in mono formats (Sum, Left, Right, Solo Mid)
+- Mid/Side meter computes levels from the output signal in real time
+- Stereo balance is computed as a smoothed ratio of L/R amplitudes
+
+## License
+
+See [LICENSE](LICENSE) for details.
