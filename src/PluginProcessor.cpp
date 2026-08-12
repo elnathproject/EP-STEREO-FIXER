@@ -225,6 +225,15 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         outputMeterL = std::max(outputMeterL * peakDecay, std::abs(outL));
         outputMeterR = std::max(outputMeterR * peakDecay, std::abs(outR));
 
+        const float outMid = (outL + outR) * 0.5f;
+        const float outSide = (outL - outR) * 0.5f;
+        outputMeterMid = std::max(outputMeterMid * peakDecay, std::abs(outMid));
+        outputMeterSide = std::max(outputMeterSide * peakDecay, std::abs(outSide));
+
+        const float sumLR = std::abs(outL) + std::abs(outR) + 1e-9f;
+        const float bal = (std::abs(outR) - std::abs(outL)) / sumLR;
+        balanceSmoothed = balanceSmoothed * corrDecay + bal * (1.0f - corrDecay);
+
         powerL = powerL * corrDecay + outL * outL * (1.0f - corrDecay);
         powerR = powerR * corrDecay + outR * outR * (1.0f - corrDecay);
         corrAccum = corrAccum * corrDecay + outL * outR * (1.0f - corrDecay);
@@ -248,6 +257,9 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     leftMeter.store(outputMeterL);
     rightMeter.store(outputMeterR);
     phaseMeter.store(correlation);
+    balanceMeter.store(balanceSmoothed);
+    midMeter.store(outputMeterMid);
+    sideMeter.store(outputMeterSide);
 }
 
 juce::AudioProcessorEditor* EPStereoFixerAudioProcessor::createEditor()

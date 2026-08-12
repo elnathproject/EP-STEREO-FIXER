@@ -1,10 +1,79 @@
 #include "PluginEditor.h"
 #include <cmath>
 
+EPLookAndFeel::EPLookAndFeel()
+{
+    setColour(juce::Slider::textBoxTextColourId, Colours::textBright);
+    setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0x00000000));
+    setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0x00000000));
+    setColour(juce::Label::textColourId, Colours::textDim);
+}
+
+void EPLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h,
+                                      float sliderPos, float startAngle, float endAngle,
+                                      juce::Slider&)
+{
+    const auto bounds = juce::Rectangle<float>(static_cast<float>(x), static_cast<float>(y),
+                                                static_cast<float>(w), static_cast<float>(h));
+    const float radius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.38f;
+    const float cx = bounds.getCentreX();
+    const float cy = bounds.getCentreY();
+    const float lineW = 3.0f;
+
+    juce::Path bgArc;
+    bgArc.addCentredArc(cx, cy, radius, radius, 0.0f, startAngle, endAngle, true);
+    g.setColour(juce::Colour(0xff2a2a3a));
+    g.strokePath(bgArc, juce::PathStrokeType(lineW + 2.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    const float angle = startAngle + sliderPos * (endAngle - startAngle);
+    juce::Path valueArc;
+    valueArc.addCentredArc(cx, cy, radius, radius, 0.0f, startAngle, angle, true);
+    g.setColour(Colours::accent);
+    g.strokePath(valueArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    g.setColour(Colours::accent.withAlpha(0.15f));
+    g.strokePath(valueArc, juce::PathStrokeType(lineW + 6.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    const float thumbR = 5.0f;
+    const float tx = cx + radius * std::cos(angle - juce::MathConstants<float>::halfPi);
+    const float ty = cy + radius * std::sin(angle - juce::MathConstants<float>::halfPi);
+    g.setColour(Colours::textBright);
+    g.fillEllipse(tx - thumbR, ty - thumbR, thumbR * 2.0f, thumbR * 2.0f);
+
+    g.setColour(Colours::accent.withAlpha(0.4f));
+    g.fillEllipse(tx - thumbR - 2.0f, ty - thumbR - 2.0f, (thumbR + 2.0f) * 2.0f, (thumbR + 2.0f) * 2.0f);
+}
+
+void EPLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& button,
+                                          const juce::Colour&, bool isMouseOver, bool isButtonDown)
+{
+    auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
+    const bool on = button.getToggleState();
+
+    juce::Colour bg = on ? Colours::accent.withAlpha(0.25f)
+                         : (isMouseOver ? Colours::btnHover : Colours::btnOff);
+
+    if (isButtonDown)
+        bg = bg.brighter(0.1f);
+
+    g.setColour(bg);
+    g.fillRoundedRectangle(bounds, 5.0f);
+
+    g.setColour(on ? Colours::accent.withAlpha(0.6f) : Colours::panelBorder);
+    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+}
+
+void EPLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                                    bool, bool)
+{
+    g.setFont(juce::Font(juce::FontOptions(12.0f, juce::Font::bold)));
+    g.setColour(button.getToggleState() ? Colours::accent : Colours::textBright);
+    g.drawText(button.getButtonText(), button.getLocalBounds(), juce::Justification::centred);
+}
+
 static void drawArrow(juce::Graphics& g, juce::Point<float> start, juce::Point<float> end, float headSize, float lineWidth)
 {
     g.drawLine(juce::Line<float>(start, end), lineWidth);
-
     const float angle = std::atan2(end.y - start.y, end.x - start.x);
     juce::Path head;
     head.addTriangle(0.0f, -headSize * 0.5f, 0.0f, headSize * 0.5f, headSize, 0.0f);
@@ -30,15 +99,16 @@ void IconButton::paintButton(juce::Graphics& g, bool isMouseOver, bool)
     auto bounds = getLocalBounds().toFloat();
     const bool active = getToggleState();
 
-    const juce::Colour bg = active ? juce::Colour(0xff5a5a6e) : (isMouseOver ? juce::Colour(0xff3a3a4e) : juce::Colour(0xff262632));
+    const juce::Colour bg = active ? Colours::accent.withAlpha(0.2f)
+                                   : (isMouseOver ? Colours::btnHover : Colours::btnOff);
     g.setColour(bg);
     g.fillRoundedRectangle(bounds, 6.0f);
 
-    g.setColour(juce::Colour(0x40ffffff));
+    g.setColour(active ? Colours::accent.withAlpha(0.5f) : Colours::panelBorder);
     g.drawRoundedRectangle(bounds, 6.0f, 1.0f);
 
     auto iconArea = bounds.removeFromTop(bounds.getHeight() * 0.55f).reduced(8.0f);
-    g.setColour(juce::Colours::white.withAlpha(active ? 1.0f : 0.75f));
+    g.setColour(active ? Colours::accent : Colours::textDim);
 
     switch (buttonType)
     {
@@ -54,7 +124,7 @@ void IconButton::paintButton(juce::Graphics& g, bool isMouseOver, bool)
     }
 
     g.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::bold)));
-    g.setColour(juce::Colours::white.withAlpha(active ? 1.0f : 0.8f));
+    g.setColour(active ? Colours::accent : Colours::textDim);
     g.drawText(labelText, bounds, juce::Justification::centred);
 }
 
@@ -71,7 +141,6 @@ void IconButton::drawFlipIcon(juce::Graphics& g, juce::Rectangle<float> area, bo
     const float x1 = area.getX() + area.getWidth() * 0.85f;
     const float y0 = area.getY() + area.getHeight() * 0.25f;
     const float y1 = area.getY() + area.getHeight() * 0.75f;
-
     drawArrow(g, { x0, y0 }, { x1, y1 }, 6.0f, 2.0f);
     drawArrow(g, { x1, y0 }, { x0, y1 }, 6.0f, 2.0f);
 }
@@ -80,14 +149,10 @@ void IconButton::drawSumIcon(juce::Graphics& g, juce::Rectangle<float> area, boo
 {
     const float radius = std::min(area.getWidth(), area.getHeight()) * 0.18f;
     drawCircleOutline(g, area.getCentre(), radius, 2.0f);
-
     const float cy = area.getCentreY();
     const float cx = area.getCentreX();
-    const float xL = area.getX() + area.getWidth() * 0.12f;
-    const float xR = area.getX() + area.getWidth() * 0.88f;
-
-    drawArrow(g, { xL, cy }, { cx - radius, cy }, 5.0f, 2.0f);
-    drawArrow(g, { xR, cy }, { cx + radius, cy }, 5.0f, 2.0f);
+    drawArrow(g, { area.getX() + area.getWidth() * 0.12f, cy }, { cx - radius, cy }, 5.0f, 2.0f);
+    drawArrow(g, { area.getX() + area.getWidth() * 0.88f, cy }, { cx + radius, cy }, 5.0f, 2.0f);
 }
 
 void IconButton::drawLeftIcon(juce::Graphics& g, juce::Rectangle<float> area, bool)
@@ -96,7 +161,6 @@ void IconButton::drawLeftIcon(juce::Graphics& g, juce::Rectangle<float> area, bo
     const float cx = area.getX() + area.getWidth() * 0.35f;
     const float cy = area.getCentreY();
     drawCircleOutline(g, { cx, cy }, radius, 2.0f);
-
     g.drawLine(cx + radius, cy, area.getX() + area.getWidth() * 0.85f, cy, 2.0f);
 }
 
@@ -106,7 +170,6 @@ void IconButton::drawRightIcon(juce::Graphics& g, juce::Rectangle<float> area, b
     const float cx = area.getX() + area.getWidth() * 0.65f;
     const float cy = area.getCentreY();
     drawCircleOutline(g, { cx, cy }, radius, 2.0f);
-
     g.drawLine(cx - radius, cy, area.getX() + area.getWidth() * 0.15f, cy, 2.0f);
 }
 
@@ -114,7 +177,6 @@ void IconButton::drawMidSideIcon(juce::Graphics& g, juce::Rectangle<float> area,
 {
     const float midRadius = std::min(area.getWidth(), area.getHeight()) * 0.18f;
     const float sideRadius = std::min(area.getWidth(), area.getHeight()) * 0.12f;
-
     drawCircleOutline(g, area.getCentre(), midRadius, 2.0f);
     drawCircleOutline(g, { area.getX() + area.getWidth() * 0.2f, area.getCentreY() }, sideRadius, 2.0f);
     drawCircleOutline(g, { area.getX() + area.getWidth() * 0.8f, area.getCentreY() }, sideRadius, 2.0f);
@@ -122,8 +184,7 @@ void IconButton::drawMidSideIcon(juce::Graphics& g, juce::Rectangle<float> area,
 
 void IconButton::drawSoloMidIcon(juce::Graphics& g, juce::Rectangle<float> area, bool)
 {
-    const float radius = std::min(area.getWidth(), area.getHeight()) * 0.22f;
-    drawCircleOutline(g, area.getCentre(), radius, 2.0f);
+    drawCircleOutline(g, area.getCentre(), std::min(area.getWidth(), area.getHeight()) * 0.22f, 2.0f);
 }
 
 void IconButton::drawSoloSideIcon(juce::Graphics& g, juce::Rectangle<float> area, bool)
@@ -140,101 +201,202 @@ void IconButton::drawLinkIcon(juce::Graphics& g, juce::Rectangle<float> area, bo
     const float h = area.getHeight() * 0.22f;
     link1.addRoundedRectangle(-w * 0.5f, -h * 0.5f, w, h, h * 0.5f);
     link2.addRoundedRectangle(-w * 0.5f, -h * 0.5f, w, h, h * 0.5f);
-
     const auto t1 = juce::AffineTransform::rotation(juce::MathConstants<float>::pi * 0.25f)
                         .translated(area.getCentreX() - area.getWidth() * 0.04f, area.getCentreY());
     const auto t2 = juce::AffineTransform::rotation(-juce::MathConstants<float>::pi * 0.25f)
                         .translated(area.getCentreX() + area.getWidth() * 0.04f, area.getCentreY());
-
     g.strokePath(link1, juce::PathStrokeType(2.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded), t1);
     g.strokePath(link2, juce::PathStrokeType(2.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded), t2);
 }
 
-PeakMeter::PeakMeter()
-{
-    startTimerHz(30);
-}
+PeakMeter::PeakMeter() { startTimerHz(30); }
 
 void PeakMeter::setLevel(float linearAmplitude)
 {
     currentLevel = linearAmplitude;
-    if (currentLevel > peakHold)
-        peakHold = currentLevel;
+    if (currentLevel > peakHold) peakHold = currentLevel;
     repaint();
 }
 
 void PeakMeter::paint(juce::Graphics& g)
 {
     auto fullArea = getLocalBounds().toFloat();
-
-    g.setColour(juce::Colour(0xff2a2a36));
-    g.fillRect(fullArea);
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(fullArea, 3.0f);
 
     const float dB = juce::Decibels::gainToDecibels(currentLevel, -60.0f);
     const float norm = juce::jlimit(0.0f, 1.0f, (dB + 60.0f) / 66.0f);
-    const float barHeight = fullArea.getHeight() * norm;
+    const float barH = fullArea.getHeight() * norm;
 
-    const juce::ColourGradient grad(juce::Colour(0xff66bb6a), 0.0f, fullArea.getBottom(),
-                                      juce::Colour(0xffff5722), 0.0f, fullArea.getY(), false);
+    auto barArea = fullArea.reduced(2.0f);
+    auto filledArea = barArea.removeFromBottom(barArea.getHeight() * norm);
+
+    juce::ColourGradient grad(Colours::meterGreen, 0.0f, barArea.getBottom(),
+                               Colours::meterRed, 0.0f, barArea.getY(), false);
+    grad.addColour(0.7, Colours::meterYellow);
     g.setGradientFill(grad);
-    g.fillRect(fullArea.removeFromBottom(barHeight));
+    g.fillRoundedRectangle(filledArea, 2.0f);
+
+    g.setColour(Colours::meterGreen.withAlpha(0.08f));
+    g.fillRoundedRectangle(filledArea, 2.0f);
 
     const float holddB = juce::Decibels::gainToDecibels(peakHold, -60.0f);
     const float holdNorm = juce::jlimit(0.0f, 1.0f, (holddB + 60.0f) / 66.0f);
     const float holdY = fullArea.getBottom() - fullArea.getHeight() * holdNorm;
+    g.setColour(Colours::textBright);
+    g.drawLine(fullArea.getX() + 2.0f, holdY, fullArea.getRight() - 2.0f, holdY, 1.5f);
 
-    g.setColour(juce::Colours::white);
-    g.drawLine(fullArea.getX(), holdY, fullArea.getRight(), holdY, 2.0f);
-
-    g.setColour(juce::Colour(0x40ffffff));
-    g.drawRect(fullArea, 1.0f);
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
 }
 
 void PeakMeter::timerCallback()
 {
     peakHold *= 0.95f;
-    if (peakHold < currentLevel)
-        peakHold = currentLevel;
+    if (peakHold < currentLevel) peakHold = currentLevel;
     repaint();
 }
 
-PhaseMeter::PhaseMeter()
-{
-}
+PhaseMeter::PhaseMeter() {}
 
-void PhaseMeter::setCorrelation(float value)
-{
-    correlation = juce::jlimit(-1.0f, 1.0f, value);
-    repaint();
-}
+void PhaseMeter::setCorrelation(float value) { correlation = juce::jlimit(-1.0f, 1.0f, value); repaint(); }
 
 void PhaseMeter::paint(juce::Graphics& g)
 {
     auto fullArea = getLocalBounds().toFloat();
-
-    g.setColour(juce::Colour(0xff2a2a36));
-    g.fillRect(fullArea);
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(fullArea, 3.0f);
 
     const float cx = fullArea.getCentreX();
-    g.setColour(juce::Colour(0x40ffffff));
-    g.drawLine(cx, fullArea.getY(), cx, fullArea.getBottom(), 1.0f);
+    g.setColour(juce::Colour(0x30ffffff));
+    g.drawLine(cx, fullArea.getY() + 4.0f, cx, fullArea.getBottom() - 4.0f, 1.0f);
 
     const float norm = (1.0f - correlation) * 0.5f;
-    const float x = fullArea.getX() + norm * fullArea.getWidth();
+    const float x = fullArea.getX() + 4.0f + norm * (fullArea.getWidth() - 8.0f);
 
-    juce::Path needle;
-    needle.addTriangle(x, fullArea.getY() + 2.0f, x - 4.0f, fullArea.getBottom() - 2.0f, x + 4.0f, fullArea.getBottom() - 2.0f);
-
-    const juce::Colour c = correlation > 0.0f ? juce::Colour(0xff66bb6a) : juce::Colour(0xffff5722);
+    const juce::Colour c = correlation > 0.0f ? Colours::meterGreen : Colours::meterRed;
     g.setColour(c);
-    g.fillPath(needle);
+    g.fillRoundedRectangle(x - 3.0f, fullArea.getY() + 4.0f, 6.0f, fullArea.getHeight() - 8.0f, 2.0f);
 
-    g.setColour(juce::Colour(0x40ffffff));
-    g.drawRect(fullArea, 1.0f);
+    g.setColour(c.withAlpha(0.15f));
+    g.fillRoundedRectangle(x - 6.0f, fullArea.getY() + 4.0f, 12.0f, fullArea.getHeight() - 8.0f, 3.0f);
+
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
 }
 
-Scope::Scope(EPStereoFixerAudioProcessor& p)
-    : processor(p)
+BalanceMeter::BalanceMeter() {}
+
+void BalanceMeter::setBalance(float value) { balance = juce::jlimit(-1.0f, 1.0f, value); repaint(); }
+
+void BalanceMeter::paint(juce::Graphics& g)
+{
+    auto fullArea = getLocalBounds().toFloat();
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(fullArea, 3.0f);
+
+    const float cx = fullArea.getCentreX();
+    const float cy = fullArea.getCentreY();
+
+    g.setColour(juce::Colour(0x20ffffff));
+    g.drawLine(cx, fullArea.getY() + 2.0f, cx, fullArea.getBottom() - 2.0f, 1.0f);
+
+    g.setFont(juce::Font(juce::FontOptions(9.0f, juce::Font::plain)));
+    g.setColour(Colours::textDim.withAlpha(0.5f));
+    g.drawText("L", fullArea.withWidth(14.0f).withX(fullArea.getX() + 2.0f), juce::Justification::centredLeft);
+    g.drawText("R", fullArea.withWidth(14.0f).withX(fullArea.getRight() - 16.0f), juce::Justification::centredRight);
+
+    const float barW = (fullArea.getWidth() - 8.0f) * 0.5f;
+    const float barH = 6.0f;
+    const float barY = cy - barH * 0.5f;
+
+    if (balance < 0.0f)
+    {
+        const float w = -balance * barW;
+        g.setColour(Colours::accent);
+        g.fillRoundedRectangle(cx - w, barY, w, barH, 2.0f);
+        g.setColour(Colours::accent.withAlpha(0.15f));
+        g.fillRoundedRectangle(cx - w - 2.0f, barY - 2.0f, w + 4.0f, barH + 4.0f, 3.0f);
+    }
+    else if (balance > 0.0f)
+    {
+        const float w = balance * barW;
+        g.setColour(Colours::accent);
+        g.fillRoundedRectangle(cx, barY, w, barH, 2.0f);
+        g.setColour(Colours::accent.withAlpha(0.15f));
+        g.fillRoundedRectangle(cx - 2.0f, barY - 2.0f, w + 4.0f, barH + 4.0f, 3.0f);
+    }
+
+    g.setColour(Colours::textBright);
+    g.fillEllipse(cx + balance * barW - 3.0f, cy - 3.0f, 6.0f, 6.0f);
+
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
+}
+
+MidSideMeter::MidSideMeter() { startTimerHz(30); }
+
+void MidSideMeter::setLevels(float mid, float side)
+{
+    midLevel = mid;
+    sideLevel = side;
+    if (midLevel > midPeakHold) midPeakHold = midLevel;
+    if (sideLevel > sidePeakHold) sidePeakHold = sideLevel;
+    repaint();
+}
+
+void MidSideMeter::paint(juce::Graphics& g)
+{
+    auto fullArea = getLocalBounds().toFloat();
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(fullArea, 3.0f);
+
+    const float barW = (fullArea.getWidth() - 12.0f) * 0.5f;
+    const float barX1 = fullArea.getX() + 4.0f;
+    const float barX2 = barX1 + barW + 4.0f;
+    const float barTop = fullArea.getY() + 16.0f;
+    const float barBot = fullArea.getBottom() - 4.0f;
+    const float barHeight = barBot - barTop;
+
+    g.setFont(juce::Font(juce::FontOptions(9.0f, juce::Font::bold)));
+    g.setColour(Colours::textDim);
+    g.drawText("M", juce::Rectangle<float>(barX1, fullArea.getY() + 2.0f, barW, 12.0f), juce::Justification::centred);
+    g.drawText("S", juce::Rectangle<float>(barX2, fullArea.getY() + 2.0f, barW, 12.0f), juce::Justification::centred);
+
+    auto drawBar = [&](float x, float w, float level, float peakHold, juce::Colour col)
+    {
+        const float dB = juce::Decibels::gainToDecibels(level, -60.0f);
+        const float norm = juce::jlimit(0.0f, 1.0f, (dB + 60.0f) / 66.0f);
+        const float h = barHeight * norm;
+
+        juce::ColourGradient grad(col, 0.0f, barBot, col.withMultipliedBrightness(0.5f), 0.0f, barTop, false);
+        g.setGradientFill(grad);
+        g.fillRoundedRectangle(x, barBot - h, w, h, 2.0f);
+
+        const float holdDb = juce::Decibels::gainToDecibels(peakHold, -60.0f);
+        const float holdNorm = juce::jlimit(0.0f, 1.0f, (holdDb + 60.0f) / 66.0f);
+        const float holdY = barBot - barHeight * holdNorm;
+        g.setColour(Colours::textBright);
+        g.drawLine(x, holdY, x + w, holdY, 1.5f);
+    };
+
+    drawBar(barX1, barW, midLevel, midPeakHold, Colours::accent);
+    drawBar(barX2, barW, sideLevel, sidePeakHold, Colours::scopeTrace);
+
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
+}
+
+void MidSideMeter::timerCallback()
+{
+    midPeakHold *= 0.95f;
+    sidePeakHold *= 0.95f;
+    if (midPeakHold < midLevel) midPeakHold = midLevel;
+    if (sidePeakHold < sideLevel) sidePeakHold = sideLevel;
+    repaint();
+}
+
+Scope::Scope(EPStereoFixerAudioProcessor& p) : processor(p)
 {
     setTooltip("Stereo goniometer: X = left, Y = right");
 }
@@ -242,18 +404,21 @@ Scope::Scope(EPStereoFixerAudioProcessor& p)
 void Scope::paint(juce::Graphics& g)
 {
     auto fullArea = getLocalBounds().toFloat();
-
-    g.setColour(juce::Colour(0xff2a2a36));
-    g.fillRect(fullArea);
+    g.setColour(juce::Colour(0xff1a1a24));
+    g.fillRoundedRectangle(fullArea, 3.0f);
 
     const float cx = fullArea.getCentreX();
     const float cy = fullArea.getCentreY();
-    const float scale = std::min(fullArea.getWidth(), fullArea.getHeight()) * 0.45f;
+    const float scale = std::min(fullArea.getWidth(), fullArea.getHeight()) * 0.42f;
 
-    g.setColour(juce::Colour(0x40ffffff));
-    g.drawLine(fullArea.getX(), cy, fullArea.getRight(), cy, 1.0f);
-    g.drawLine(cx, fullArea.getY(), cx, fullArea.getBottom(), 1.0f);
-    g.drawEllipse(cx - scale, cy - scale, scale * 2.0f, scale * 2.0f, 1.0f);
+    g.setColour(juce::Colour(0x20ffffff));
+    g.drawLine(fullArea.getX(), cy, fullArea.getRight(), cy, 0.5f);
+    g.drawLine(cx, fullArea.getY(), cx, fullArea.getBottom(), 0.5f);
+
+    juce::Path circle;
+    circle.addEllipse(cx - scale, cy - scale, scale * 2.0f, scale * 2.0f);
+    g.setColour(juce::Colour(0x18ffffff));
+    g.strokePath(circle, juce::PathStrokeType(0.5f));
 
     const int writeIdx = processor.getScopeWriteIndex();
     const float* l = processor.getScopeL();
@@ -261,39 +426,56 @@ void Scope::paint(juce::Graphics& g)
 
     juce::Path trace;
     bool first = true;
-
     for (int i = 0; i < processor.scopeSize; ++i)
     {
         const int idx = (writeIdx + i) % processor.scopeSize;
         const float x = cx + juce::jlimit(-scale, scale, l[idx] * scale);
         const float y = cy - juce::jlimit(-scale, scale, r[idx] * scale);
-
-        if (first)
-        {
-            trace.startNewSubPath(x, y);
-            first = false;
-        }
-        else
-        {
-            trace.lineTo(x, y);
-        }
+        if (first) { trace.startNewSubPath(x, y); first = false; }
+        else       { trace.lineTo(x, y); }
     }
 
-    g.setColour(juce::Colour(0xff66bb6a));
-    g.strokePath(trace, juce::PathStrokeType(1.5f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded));
+    g.setColour(Colours::scopeTrace.withAlpha(0.12f));
+    g.strokePath(trace, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    g.setColour(Colours::scopeTrace);
+    g.strokePath(trace, juce::PathStrokeType(1.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-    g.setColour(juce::Colour(0x40ffffff));
-    g.drawRect(fullArea, 1.0f);
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
+}
+
+void EPStereoFixerAudioProcessorEditor::drawPanel(juce::Graphics& g, juce::Rectangle<int> bounds)
+{
+    auto b = bounds.toFloat();
+    g.setColour(Colours::panelBg);
+    g.fillRoundedRectangle(b, 8.0f);
+    g.setColour(Colours::panelBorder);
+    g.drawRoundedRectangle(b, 8.0f, 1.0f);
+}
+
+void EPStereoFixerAudioProcessorEditor::setupSectionLabel(juce::Label& label, const juce::String& text)
+{
+    label.setText(text, juce::dontSendNotification);
+    label.setJustificationType(juce::Justification::centredLeft);
+    label.setFont(juce::Font(juce::FontOptions(11.0f, juce::Font::bold)));
+    label.setColour(juce::Label::textColourId, Colours::accent);
+    addAndMakeVisible(label);
 }
 
 EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFixerAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), scope(audioProcessor)
 {
-    formatLabel.setText("Format", juce::dontSendNotification);
-    formatLabel.setJustificationType(juce::Justification::centred);
-    formatLabel.setFont(juce::Font(juce::FontOptions(16.0f, juce::Font::bold)));
-    formatLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(formatLabel);
+    setLookAndFeel(&epLookAndFeel);
+
+    titleLabel.setText("EP STEREO FIXER", juce::dontSendNotification);
+    titleLabel.setJustificationType(juce::Justification::centred);
+    titleLabel.setFont(juce::Font(juce::FontOptions(22.0f, juce::Font::bold)));
+    titleLabel.setColour(juce::Label::textColourId, Colours::accent);
+    addAndMakeVisible(titleLabel);
+
+    setupSectionLabel(formatLabel, "FORMAT");
+    setupSectionLabel(controlsLabel, "CONTROLS");
+    setupSectionLabel(metersLabel, "METERS");
 
     addAndMakeVisible(stereoButton);
     addAndMakeVisible(flipButton);
@@ -325,8 +507,8 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
 
     setupGainSlider(inputGainSlider, inputGainLabel, "Input Gain");
     setupGainSlider(widthSlider, widthLabel, "Width");
-    setupGainSlider(gainLeftSlider, gainLeftLabel, "Gain Left");
-    setupGainSlider(gainRightSlider, gainRightLabel, "Gain Right");
+    setupGainSlider(gainLeftSlider, gainLeftLabel, "Gain L");
+    setupGainSlider(gainRightSlider, gainRightLabel, "Gain R");
 
     inputGainSlider.setTooltip("Adjust the input level before format processing");
     widthSlider.setTooltip("Adjust stereo width using Mid/Side encoding");
@@ -361,26 +543,18 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     addAndMakeVisible(leftMeter);
     addAndMakeVisible(rightMeter);
     addAndMakeVisible(phaseMeter);
+    addAndMakeVisible(balanceMeter);
+    addAndMakeVisible(midSideMeter);
     addAndMakeVisible(scope);
 
     leftMeter.setTooltip("Output peak level for the left channel");
     rightMeter.setTooltip("Output peak level for the right channel");
     phaseMeter.setTooltip("Phase correlation: left = mono, right = out-of-phase");
+    balanceMeter.setTooltip("Stereo balance: centre = balanced, L/R = panned");
+    midSideMeter.setTooltip("Mid and Side signal levels");
 
     setupMeterDbLabel(leftDbLabel);
     setupMeterDbLabel(rightDbLabel);
-
-    metersLabel.setText("Meters", juce::dontSendNotification);
-    metersLabel.setJustificationType(juce::Justification::centred);
-    metersLabel.setFont(juce::Font(juce::FontOptions(16.0f, juce::Font::bold)));
-    metersLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(metersLabel);
-
-    outputGainLabel.setText("Controls", juce::dontSendNotification);
-    outputGainLabel.setJustificationType(juce::Justification::centred);
-    outputGainLabel.setFont(juce::Font(juce::FontOptions(16.0f, juce::Font::bold)));
-    outputGainLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(outputGainLabel);
 
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
     updateFormat(choice != nullptr ? choice->getIndex() : 0);
@@ -401,23 +575,29 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     bypassButton.setToggleState(bypassParam != nullptr && *bypassParam, juce::dontSendNotification);
 
     startTimerHz(30);
-    setSize(680, 520);
+    setSize(700, 560);
 
     setResizable(true, true);
-    setResizeLimits(680, 520, 1360, 1040);
+    setResizeLimits(700, 560, 1400, 1120);
+}
+
+EPStereoFixerAudioProcessorEditor::~EPStereoFixerAudioProcessorEditor()
+{
+    setLookAndFeel(nullptr);
 }
 
 void EPStereoFixerAudioProcessorEditor::setupGainSlider(juce::Slider& slider, juce::Label& label, const juce::String& name)
 {
     slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    slider.setTextValueSuffix(name == "Width" ? " %" : " dB");
+    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 18);
     slider.setNumDecimalPlacesToDisplay(1);
     addAndMakeVisible(slider);
 
     label.setText(name, juce::dontSendNotification);
     label.attachToComponent(&slider, false);
     label.setJustificationType(juce::Justification::centred);
+    label.setFont(juce::Font(juce::FontOptions(11.0f, juce::Font::plain)));
+    label.setColour(juce::Label::textColourId, Colours::textDim);
     addAndMakeVisible(label);
 }
 
@@ -425,10 +605,6 @@ void EPStereoFixerAudioProcessorEditor::setupUtilityButton(juce::TextButton& but
 {
     button.setClickingTogglesState(true);
     button.setTooltip(tooltip);
-    button.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff262632));
-    button.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xff5a5a6e));
-    button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     addAndMakeVisible(button);
 }
 
@@ -437,75 +613,100 @@ void EPStereoFixerAudioProcessorEditor::setupMeterDbLabel(juce::Label& label)
     label.setText("-inf", juce::dontSendNotification);
     label.setJustificationType(juce::Justification::centred);
     label.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::plain)));
-    label.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.7f));
+    label.setColour(juce::Label::textColourId, Colours::textDim);
     addAndMakeVisible(label);
 }
 
 void EPStereoFixerAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff1e1e24));
+    juce::ColourGradient bgGrad(Colours::bg, 0.0f, 0.0f,
+                                 Colours::bg.brighter(0.04f), 0.0f, static_cast<float>(getHeight()), false);
+    g.setGradientFill(bgGrad);
+    g.fillAll();
+
+    auto area = getLocalBounds().reduced(12);
+    area.removeFromTop(34);
+
+    auto formatPanel = area.removeFromTop(130);
+    drawPanel(g, formatPanel);
+
+    area.removeFromTop(6);
+    auto controlsPanel = area.removeFromTop(140);
+    drawPanel(g, controlsPanel);
+
+    area.removeFromTop(6);
+    drawPanel(g, area);
 }
 
 void EPStereoFixerAudioProcessorEditor::resized()
 {
-    auto area = getLocalBounds().reduced(16);
+    auto area = getLocalBounds().reduced(12);
 
-    formatLabel.setBounds(area.removeFromTop(24));
+    titleLabel.setBounds(area.removeFromTop(32));
+    area.removeFromTop(2);
+
+    auto formatPanel = area.removeFromTop(130);
+    auto formatInner = formatPanel.reduced(10);
+    formatLabel.setBounds(formatInner.removeFromTop(18));
+    formatInner.removeFromTop(4);
+
+    auto formatRow = formatInner.removeFromTop(56);
+    const int fbW = formatRow.getWidth() / 8;
+    stereoButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    flipButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    sumButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    leftButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    rightButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    midSideButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    soloMidButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+    soloSideButton.setBounds(formatRow.removeFromLeft(fbW).reduced(2));
+
+    formatInner.removeFromTop(4);
+    auto utilityRow = formatInner.removeFromTop(32);
+    const int uW = utilityRow.getWidth() / 4;
+    invertLeftButton.setBounds(utilityRow.removeFromLeft(uW).reduced(2));
+    invertRightButton.setBounds(utilityRow.removeFromLeft(uW).reduced(2));
+    autoGainButton.setBounds(utilityRow.removeFromLeft(uW).reduced(2));
+    bypassButton.setBounds(utilityRow.removeFromLeft(uW).reduced(2));
+
     area.removeFromTop(6);
+    auto controlsPanel = area.removeFromTop(140);
+    auto controlsInner = controlsPanel.reduced(10);
+    controlsLabel.setBounds(controlsInner.removeFromTop(18));
+    controlsInner.removeFromTop(14);
 
-    auto formatRow = area.removeFromTop(64);
-    const int formatButtonWidth = formatRow.getWidth() / 8;
-    stereoButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    flipButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    sumButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    leftButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    rightButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    midSideButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    soloMidButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-    soloSideButton.setBounds(formatRow.removeFromLeft(formatButtonWidth).reduced(2));
-
-    area.removeFromTop(8);
-
-    auto utilityRow = area.removeFromTop(36);
-    const int utilityWidth = utilityRow.getWidth() / 4;
-    invertLeftButton.setBounds(utilityRow.removeFromLeft(utilityWidth).reduced(4));
-    invertRightButton.setBounds(utilityRow.removeFromLeft(utilityWidth).reduced(4));
-    autoGainButton.setBounds(utilityRow.removeFromLeft(utilityWidth).reduced(4));
-    bypassButton.setBounds(utilityRow.removeFromLeft(utilityWidth).reduced(4));
-
-    area.removeFromTop(8);
-    outputGainLabel.setBounds(area.removeFromTop(24));
-    area.removeFromTop(14);
-
-    auto knobRow = area.removeFromTop(110);
-    const int linkW = 36;
-    const int knobW = (knobRow.getWidth() - linkW) / 4;
-
+    auto knobRow = controlsInner;
+    const int linkBtnW = 36;
+    const int knobW = (knobRow.getWidth() - linkBtnW) / 4;
     inputGainSlider.setBounds(knobRow.removeFromLeft(knobW).reduced(4));
     widthSlider.setBounds(knobRow.removeFromLeft(knobW).reduced(4));
     gainLeftSlider.setBounds(knobRow.removeFromLeft(knobW).reduced(4));
-    linkButton.setBounds(knobRow.removeFromLeft(linkW).reduced(2));
+    linkButton.setBounds(knobRow.removeFromLeft(linkBtnW).reduced(2));
     gainRightSlider.setBounds(knobRow.removeFromLeft(knobW).reduced(4));
 
-    area.removeFromTop(8);
-    metersLabel.setBounds(area.removeFromTop(24));
+    area.removeFromTop(6);
+    auto metersPanel = area;
+    auto metersInner = metersPanel.reduced(10);
+    metersLabel.setBounds(metersInner.removeFromTop(18));
+    metersInner.removeFromTop(4);
 
-    auto meterArea = area.removeFromTop(120);
-    auto dbLabelRow = meterArea.removeFromTop(20);
-    auto meterRow = meterArea;
+    auto dbRow = metersInner.removeFromTop(18);
+    auto meterRow = metersInner;
 
-    const int meterBarW = 50;
-    const int scopeSz = meterRow.getHeight();
-
-    leftDbLabel.setBounds(dbLabelRow.removeFromLeft(meterBarW));
-    rightDbLabel.setBounds(dbLabelRow.removeFromLeft(meterBarW));
+    const int meterBarW = 44;
+    leftDbLabel.setBounds(dbRow.removeFromLeft(meterBarW));
+    rightDbLabel.setBounds(dbRow.removeFromLeft(meterBarW));
 
     leftMeter.setBounds(meterRow.removeFromLeft(meterBarW).reduced(2, 2));
     rightMeter.setBounds(meterRow.removeFromLeft(meterBarW).reduced(2, 2));
-
-    meterRow.removeFromLeft(8);
-
-    phaseMeter.setBounds(meterRow.removeFromLeft(120).reduced(2));
+    meterRow.removeFromLeft(10);
+    phaseMeter.setBounds(meterRow.removeFromLeft(100).reduced(2));
+    meterRow.removeFromLeft(10);
+    balanceMeter.setBounds(meterRow.removeFromLeft(100).reduced(2));
+    meterRow.removeFromLeft(10);
+    midSideMeter.setBounds(meterRow.removeFromLeft(60).reduced(2));
+    meterRow.removeFromLeft(10);
+    const int scopeSz = meterRow.getHeight();
     scope.setBounds(meterRow.removeFromLeft(scopeSz).reduced(2));
 }
 
@@ -514,14 +715,12 @@ void EPStereoFixerAudioProcessorEditor::setFormat(int index)
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
     if (choice != nullptr)
         *choice = index;
-
     updateFormat(index);
 }
 
 void EPStereoFixerAudioProcessorEditor::updateFormat(int index)
 {
     currentFormat = index;
-
     stereoButton.setToggleState(index == 0, juce::dontSendNotification);
     flipButton.setToggleState(index == 1, juce::dontSendNotification);
     sumButton.setToggleState(index == 2, juce::dontSendNotification);
@@ -534,15 +733,10 @@ void EPStereoFixerAudioProcessorEditor::updateFormat(int index)
     if (isMonoFormat(index))
     {
         const bool any = invertLeftButton.getToggleState() || invertRightButton.getToggleState();
-
-        auto* leftParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
-        if (leftParam != nullptr)
-            *leftParam = any;
-
-        auto* rightParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
-        if (rightParam != nullptr)
-            *rightParam = any;
-
+        auto* lp = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
+        if (lp != nullptr) *lp = any;
+        auto* rp = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
+        if (rp != nullptr) *rp = any;
         invertLeftButton.setToggleState(any, juce::dontSendNotification);
         invertRightButton.setToggleState(any, juce::dontSendNotification);
     }
@@ -564,41 +758,33 @@ void EPStereoFixerAudioProcessorEditor::updateGainLabels()
     }
     else
     {
-        gainLeftLabel.setText("Gain Left", juce::dontSendNotification);
-        gainRightLabel.setText("Gain Right", juce::dontSendNotification);
+        gainLeftLabel.setText("Gain L", juce::dontSendNotification);
+        gainRightLabel.setText("Gain R", juce::dontSendNotification);
     }
 }
 
 void EPStereoFixerAudioProcessorEditor::setLinkState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("gainLink"));
-    if (param != nullptr)
-        *param = active;
-
-    if (active)
-        syncLinkedGainFromLeft();
+    if (param != nullptr) *param = active;
+    if (active) syncLinkedGainFromLeft();
 }
 
 void EPStereoFixerAudioProcessorEditor::setAutoGainState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("autoGain"));
-    if (param != nullptr)
-        *param = active;
+    if (param != nullptr) *param = active;
 }
 
 void EPStereoFixerAudioProcessorEditor::setInvertLeftState(bool active)
 {
     auto* leftParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
-    if (leftParam != nullptr)
-        *leftParam = active;
-
+    if (leftParam != nullptr) *leftParam = active;
     invertLeftButton.setToggleState(active, juce::dontSendNotification);
-
     if (isMonoFormat(currentFormat))
     {
         auto* rightParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
-        if (rightParam != nullptr)
-            *rightParam = active;
+        if (rightParam != nullptr) *rightParam = active;
         invertRightButton.setToggleState(active, juce::dontSendNotification);
     }
 }
@@ -606,16 +792,12 @@ void EPStereoFixerAudioProcessorEditor::setInvertLeftState(bool active)
 void EPStereoFixerAudioProcessorEditor::setInvertRightState(bool active)
 {
     auto* rightParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
-    if (rightParam != nullptr)
-        *rightParam = active;
-
+    if (rightParam != nullptr) *rightParam = active;
     invertRightButton.setToggleState(active, juce::dontSendNotification);
-
     if (isMonoFormat(currentFormat))
     {
         auto* leftParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
-        if (leftParam != nullptr)
-            *leftParam = active;
+        if (leftParam != nullptr) *leftParam = active;
         invertLeftButton.setToggleState(active, juce::dontSendNotification);
     }
 }
@@ -628,8 +810,7 @@ bool EPStereoFixerAudioProcessorEditor::isMonoFormat(int index) const
 void EPStereoFixerAudioProcessorEditor::setBypassState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("bypass"));
-    if (param != nullptr)
-        *param = active;
+    if (param != nullptr) *param = active;
 }
 
 void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromLeft()
@@ -638,8 +819,7 @@ void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromLeft()
     const float value = gainLeftSlider.getValue();
     gainRightSlider.setValue(value, juce::dontSendNotification);
     auto* rightParam = audioProcessor.getAPVTS().getParameter("gainRight");
-    if (rightParam != nullptr)
-        rightParam->setValueNotifyingHost(rightParam->convertTo0to1(value));
+    if (rightParam != nullptr) rightParam->setValueNotifyingHost(rightParam->convertTo0to1(value));
     updatingLink = false;
 }
 
@@ -649,36 +829,29 @@ void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromRight()
     const float value = gainRightSlider.getValue();
     gainLeftSlider.setValue(value, juce::dontSendNotification);
     auto* leftParam = audioProcessor.getAPVTS().getParameter("gainLeft");
-    if (leftParam != nullptr)
-        leftParam->setValueNotifyingHost(leftParam->convertTo0to1(value));
+    if (leftParam != nullptr) leftParam->setValueNotifyingHost(leftParam->convertTo0to1(value));
     updatingLink = false;
 }
 
 void EPStereoFixerAudioProcessorEditor::timerCallback()
 {
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
-    if (choice != nullptr)
-        updateFormat(choice->getIndex());
+    if (choice != nullptr) updateFormat(choice->getIndex());
 
     auto* gainLinkParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("gainLink"));
-    if (gainLinkParam != nullptr)
-        linkButton.setToggleState(*gainLinkParam, juce::dontSendNotification);
+    if (gainLinkParam != nullptr) linkButton.setToggleState(*gainLinkParam, juce::dontSendNotification);
 
     auto* autoGainParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("autoGain"));
-    if (autoGainParam != nullptr)
-        autoGainButton.setToggleState(*autoGainParam, juce::dontSendNotification);
+    if (autoGainParam != nullptr) autoGainButton.setToggleState(*autoGainParam, juce::dontSendNotification);
 
     auto* invertLeftParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
-    if (invertLeftParam != nullptr)
-        invertLeftButton.setToggleState(*invertLeftParam, juce::dontSendNotification);
+    if (invertLeftParam != nullptr) invertLeftButton.setToggleState(*invertLeftParam, juce::dontSendNotification);
 
     auto* invertRightParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
-    if (invertRightParam != nullptr)
-        invertRightButton.setToggleState(*invertRightParam, juce::dontSendNotification);
+    if (invertRightParam != nullptr) invertRightButton.setToggleState(*invertRightParam, juce::dontSendNotification);
 
     auto* bypassParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("bypass"));
-    if (bypassParam != nullptr)
-        bypassButton.setToggleState(*bypassParam, juce::dontSendNotification);
+    if (bypassParam != nullptr) bypassButton.setToggleState(*bypassParam, juce::dontSendNotification);
 
     const float leftLevel = audioProcessor.getLeftMeter();
     const float rightLevel = audioProcessor.getRightMeter();
@@ -686,6 +859,8 @@ void EPStereoFixerAudioProcessorEditor::timerCallback()
     leftMeter.setLevel(leftLevel);
     rightMeter.setLevel(rightLevel);
     phaseMeter.setCorrelation(audioProcessor.getPhaseMeter());
+    balanceMeter.setBalance(audioProcessor.getBalance());
+    midSideMeter.setLevels(audioProcessor.getMidLevel(), audioProcessor.getSideLevel());
     scope.repaint();
 
     leftDbLabel.setText(juce::Decibels::gainToDecibels(leftLevel, -60.0f) > -59.0f

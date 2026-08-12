@@ -37,6 +37,9 @@ public:
     float getLeftMeter() const { return leftMeter.load(); }
     float getRightMeter() const { return rightMeter.load(); }
     float getPhaseMeter() const { return phaseMeter.load(); }
+    float getBalance() const { return balanceMeter.load(); }
+    float getMidLevel() const { return midMeter.load(); }
+    float getSideLevel() const { return sideMeter.load(); }
 
     static constexpr int scopeSize = 256;
     const float* getScopeL() const { return scopeL.data(); }
@@ -72,6 +75,13 @@ private:
     std::atomic<float> leftMeter { 0.0f };
     std::atomic<float> rightMeter { 0.0f };
     std::atomic<float> phaseMeter { 0.0f };
+    std::atomic<float> balanceMeter { 0.0f };
+    std::atomic<float> midMeter { 0.0f };
+    std::atomic<float> sideMeter { 0.0f };
+
+    float outputMeterMid = 0.0f;
+    float outputMeterSide = 0.0f;
+    float balanceSmoothed = 0.0f;
 
     std::array<float, scopeSize> scopeL {};
     std::array<float, scopeSize> scopeR {};
