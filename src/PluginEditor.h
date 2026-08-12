@@ -190,6 +190,7 @@ private:
     juce::Label rightDbLabel;
     juce::Label phaseLabel;
     juce::Label balanceLabel;
+    juce::Label msLabel;
     juce::Label scopeLabel;
     juce::Label corrLabel;
 

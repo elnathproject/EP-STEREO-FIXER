@@ -695,6 +695,7 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     };
     setupMeterLabel(phaseLabel, "Phase");
     setupMeterLabel(balanceLabel, "Balance");
+    setupMeterLabel(msLabel, "M/S");
     setupMeterLabel(scopeLabel, "Scope");
     setupMeterLabel(corrLabel, "Correlation");
 
@@ -846,7 +847,7 @@ void EPStereoFixerAudioProcessorEditor::resized()
     dbRow.removeFromLeft(10);
     balanceLabel.setBounds(dbRow.removeFromLeft(100));
     dbRow.removeFromLeft(10);
-    dbRow.removeFromLeft(60);
+    msLabel.setBounds(dbRow.removeFromLeft(60));
     dbRow.removeFromLeft(10);
     scopeLabel.setBounds(dbRow.removeFromLeft(meterRow.getHeight()));
 
