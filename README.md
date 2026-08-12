@@ -1,5 +1,7 @@
 # EP STEREO FIXER
 
+[![Build](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml/badge.svg)](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml)
+
 A JUCE-based stereo field manipulation plugin (VST3 / Standalone) inspired by the DaVinci Resolve Stereo Fixer panel. Designed for mixing, mastering and post-production workflows where precise stereo control is needed.
 
 **Developer:** EP | **Category:** Fx | Spatial
@@ -113,6 +115,19 @@ After installing, restart your DAW or run a VST3 re-scan.
 - Phase controls are automatically linked in mono formats (Sum, Left, Right, Solo Mid)
 - Mid/Side meter computes levels from the output signal in real time
 - Stereo balance is computed as a smoothed ratio of L/R amplitudes
+
+## Download
+
+Pre-built binaries for macOS (arm64, x86_64), Windows and Linux are available on the [Releases](https://github.com/elnathproject/EP-STEREO-FIXER/releases) page.
+
+### Creating a release
+
+Tag a version and push — GitHub Actions will build all platforms and create the release automatically:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## License
 

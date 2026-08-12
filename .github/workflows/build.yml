@@ -1,0 +1,108 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS-arm64
+            os: macos-14
+            cmake_args: -DCMAKE_OSX_ARCHITECTURES=arm64
+            artifact: EP-STEREO-FIXER-macOS-arm64
+
+          - name: macOS-x86_64
+            os: macos-13
+            cmake_args: -DCMAKE_OSX_ARCHITECTURES=x86_64
+            artifact: EP-STEREO-FIXER-macOS-x86_64
+
+          - name: Windows
+            os: windows-latest
+            cmake_args: ""
+            artifact: EP-STEREO-FIXER-Windows
+
+          - name: Linux
+            os: ubuntu-latest
+            cmake_args: ""
+            artifact: EP-STEREO-FIXER-Linux
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxcomposite-dev \
+            libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev \
+            libxrender-dev libfreetype6-dev libwebkit2gtk-4.1-dev \
+            libcurl4-openssl-dev pkg-config
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Prepare artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p staging
+          cp -R "build/EPStereoFixer_artefacts/Release/VST3/EP STEREO FIXER.vst3" staging/
+          if [ -d "build/EPStereoFixer_artefacts/Release/Standalone" ]; then
+            cp -R build/EPStereoFixer_artefacts/Release/Standalone/* staging/ 2>/dev/null || true
+          fi
+
+      - name: Prepare artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging
+          Copy-Item -Recurse "build\EPStereoFixer_artefacts\Release\VST3\EP STEREO FIXER.vst3" staging\
+          if (Test-Path "build\EPStereoFixer_artefacts\Release\Standalone") {
+            Copy-Item -Recurse build\EPStereoFixer_artefacts\Release\Standalone\* staging\ -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: staging/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create zip archives
+        run: |
+          cd artifacts
+          for dir in */; do
+            name="${dir%/}"
+            (cd "$name" && zip -r "../../${name}.zip" .)
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: '*.zip'
