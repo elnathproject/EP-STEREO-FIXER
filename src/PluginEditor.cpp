@@ -323,17 +323,23 @@ void Correlometer::paint(juce::Graphics& g)
     const int n = EPStereoFixerAudioProcessor::numCorrBands;
     const float barW = plotW / static_cast<float>(n);
 
+    const char* freqLabels[12] = { "40", "80", "160", "315", "630", "1.2k", "2.5k", "4k", "6.3k", "8k", "12k", "16k" };
+
     for (int i = 0; i < n; ++i)
     {
         const float x = plotL + static_cast<float>(i) * barW;
         const float corr = values[i];
         const float h = std::abs(corr) * plotH * 0.5f;
+        const bool hovered = (i == hoveredBand);
 
         juce::Colour col;
         if (corr >= 0.0f)
             col = Colours::meterGreen.withAlpha(0.5f + corr * 0.5f);
         else
             col = Colours::meterRed.withAlpha(0.5f + std::abs(corr) * 0.5f);
+
+        if (hovered)
+            col = col.brighter(0.3f);
 
         if (corr >= 0.0f)
         {
@@ -353,15 +359,59 @@ void Correlometer::paint(juce::Graphics& g)
 
     g.setFont(juce::Font(juce::FontOptions(7.0f, juce::Font::plain)));
     g.setColour(Colours::textDim.withAlpha(0.5f));
-    const char* freqLabels[12] = { "40", "80", "160", "315", "630", "1.2k", "2.5k", "4k", "6.3k", "8k", "12k", "16k" };
     for (int i = 0; i < n; ++i)
     {
         const float x = plotL + static_cast<float>(i) * barW;
         g.drawText(freqLabels[i], juce::Rectangle<float>(x, plotB + 1.0f, barW, 12.0f), juce::Justification::centred);
     }
 
+    if (hoveredBand >= 0 && hoveredBand < n)
+    {
+        const float corr = values[hoveredBand];
+        juce::String info = juce::String(freqLabels[hoveredBand]) + " Hz: " + juce::String(corr, 2);
+        g.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::bold)));
+
+        const float tw = juce::GlyphArrangement::getStringWidth(g.getCurrentFont(), info) + 12.0f;
+        const float th = 16.0f;
+        float tx = plotL + (static_cast<float>(hoveredBand) + 0.5f) * barW - tw * 0.5f;
+        tx = juce::jlimit(area.getX() + 2.0f, area.getRight() - tw - 2.0f, tx);
+
+        g.setColour(juce::Colour(0xe0101018));
+        g.fillRoundedRectangle(tx, plotT, tw, th, 3.0f);
+        g.setColour(Colours::textBright);
+        g.drawText(info, juce::Rectangle<float>(tx, plotT, tw, th), juce::Justification::centred);
+    }
+
     g.setColour(Colours::panelBorder);
     g.drawRoundedRectangle(area, 3.0f, 1.0f);
+}
+
+void Correlometer::mouseMove(const juce::MouseEvent& event)
+{
+    auto area = getLocalBounds().toFloat();
+    const float pad = 4.0f;
+    const float plotL = area.getX() + pad;
+    const float plotR = area.getRight() - pad;
+    const float plotW = plotR - plotL;
+    const int n = EPStereoFixerAudioProcessor::numCorrBands;
+    const float barW = plotW / static_cast<float>(n);
+
+    const float mx = static_cast<float>(event.x);
+    int band = static_cast<int>((mx - plotL) / barW);
+    if (band < 0 || band >= n)
+        band = -1;
+
+    if (band != hoveredBand)
+    {
+        hoveredBand = band;
+        repaint();
+    }
+}
+
+void Correlometer::mouseExit(const juce::MouseEvent&)
+{
+    hoveredBand = -1;
+    repaint();
 }
 
 BalanceMeter::BalanceMeter() {}

@@ -13,6 +13,8 @@ public:
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
+    bool supportsDoublePrecisionProcessing() const override { return true; }
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
@@ -58,6 +60,7 @@ private:
     juce::LinearSmoothedValue<float> widthSmoothed;
     juce::LinearSmoothedValue<float> gainLeftSmoothed;
     juce::LinearSmoothedValue<float> gainRightSmoothed;
+    juce::LinearSmoothedValue<float> bypassSmoothed;
 
     double sampleRate = 44100.0;
     float peakDecay = 0.999f;
@@ -122,6 +125,9 @@ private:
     std::array<std::atomic<float>, numCorrBands> bandCorrelation {};
 
     void updateBandFilters();
+
+    template <typename FloatType>
+    void processBlockInternal(juce::AudioBuffer<FloatType>& buffer);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoFixerAudioProcessor)
 };

@@ -104,10 +104,13 @@ public:
     Correlometer(EPStereoFixerAudioProcessor& p);
     void update();
     void paint(juce::Graphics& g) override;
+    void mouseMove(const juce::MouseEvent& event) override;
+    void mouseExit(const juce::MouseEvent& event) override;
 
 private:
     EPStereoFixerAudioProcessor& processor;
     std::array<float, EPStereoFixerAudioProcessor::numCorrBands> values {};
+    int hoveredBand = -1;
 };
 
 class BalanceMeter : public juce::Component,

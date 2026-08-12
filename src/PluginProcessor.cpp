@@ -61,11 +61,13 @@ void EPStereoFixerAudioProcessor::prepareToPlay(double newSampleRate, int)
     widthSmoothed.reset(sampleRate, 0.05);
     gainLeftSmoothed.reset(sampleRate, 0.05);
     gainRightSmoothed.reset(sampleRate, 0.05);
+    bypassSmoothed.reset(sampleRate, 0.02);
 
     inputGainSmoothed.setCurrentAndTargetValue(parameters.getRawParameterValue("inputGain")->load());
     widthSmoothed.setCurrentAndTargetValue(parameters.getRawParameterValue("width")->load());
     gainLeftSmoothed.setCurrentAndTargetValue(parameters.getRawParameterValue("gainLeft")->load());
     gainRightSmoothed.setCurrentAndTargetValue(parameters.getRawParameterValue("gainRight")->load());
+    bypassSmoothed.setCurrentAndTargetValue(parameters.getRawParameterValue("bypass")->load() > 0.5f ? 1.0f : 0.0f);
 
     const float peakRelease = 0.15f;
     const float corrRelease = 0.05f;
@@ -132,6 +134,17 @@ void EPStereoFixerAudioProcessor::updateBandFilters()
 
 void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
+    processBlockInternal(buffer);
+}
+
+void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer&)
+{
+    processBlockInternal(buffer);
+}
+
+template <typename FloatType>
+void EPStereoFixerAudioProcessor::processBlockInternal(juce::AudioBuffer<FloatType>& buffer)
+{
     juce::ScopedNoDenormals noDenormals;
 
     if (buffer.getNumChannels() < 2)
@@ -146,6 +159,7 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     const bool invertR = parameters.getRawParameterValue("invertRight")->load() > 0.5f;
     const bool autoGainActive = parameters.getRawParameterValue("autoGain")->load() > 0.5f;
     const bool bypassActive = parameters.getRawParameterValue("bypass")->load() > 0.5f;
+    bypassSmoothed.setTargetValue(bypassActive ? 1.0f : 0.0f);
 
     inputGainSmoothed.setTargetValue(parameters.getRawParameterValue("inputGain")->load());
     widthSmoothed.setTargetValue(parameters.getRawParameterValue("width")->load());
@@ -157,121 +171,121 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     for (int i = 0; i < numSamples; ++i)
     {
-        const float inGain = juce::Decibels::decibelsToGain(inputGainSmoothed.getNextValue());
-        const float widthFactor = widthSmoothed.getNextValue() / 100.0f;
-        const float linL = juce::Decibels::decibelsToGain(gainLeftSmoothed.getNextValue());
-        const float linR = juce::Decibels::decibelsToGain(gainRightSmoothed.getNextValue());
+        const auto inGain = static_cast<FloatType>(juce::Decibels::decibelsToGain(inputGainSmoothed.getNextValue()));
+        const auto widthFactor = static_cast<FloatType>(widthSmoothed.getNextValue() / 100.0f);
+        const auto linL = static_cast<FloatType>(juce::Decibels::decibelsToGain(gainLeftSmoothed.getNextValue()));
+        const auto linR = static_cast<FloatType>(juce::Decibels::decibelsToGain(gainRightSmoothed.getNextValue()));
+        const auto bypassMix = static_cast<FloatType>(bypassSmoothed.getNextValue());
 
-        float l = left[i];
-        float r = right[i];
+        const FloatType dryL = left[i];
+        const FloatType dryR = right[i];
 
-        if (!bypassActive)
+        FloatType l = dryL;
+        FloatType r = dryR;
+
+        if (invertL)
+            l = -l;
+        if (invertR)
+            r = -r;
+
+        l *= inGain;
+        r *= inGain;
+
         {
-            if (invertL)
-                l = -l;
-            if (invertR)
-                r = -r;
-
-            l *= inGain;
-            r *= inGain;
-
-            const float mid = (l + r) * 0.5f;
-            const float side = (l - r) * 0.5f;
+            const FloatType half = static_cast<FloatType>(0.5);
+            const FloatType mid = (l + r) * half;
+            const FloatType side = (l - r) * half;
             l = mid + side * widthFactor;
             r = mid - side * widthFactor;
         }
 
-        inputPeak = std::max(inputPeak * peakDecay, std::max(std::abs(l), std::abs(r)));
+        inputPeak = std::max(inputPeak * peakDecay, std::max(std::abs(static_cast<float>(l)), std::abs(static_cast<float>(r))));
 
-        float outL = l;
-        float outR = r;
+        FloatType outL = l;
+        FloatType outR = r;
 
-        if (!bypassActive)
+        switch (format)
         {
-            switch (format)
+            case 0: break;
+            case 1: std::swap(outL, outR); break;
+            case 2:
             {
-                case 0: // Stereo
-                    break;
-                case 1: // Flip Channels
-                    std::swap(outL, outR);
-                    break;
-                case 2: // Sum L+R
-                {
-                    const float sum = (outL + outR) * 0.5f;
-                    outL = sum;
-                    outR = sum;
-                    break;
-                }
-                case 3: // Left
-                    outL = outL;
-                    outR = outL;
-                    break;
-                case 4: // Right
-                    outL = outR;
-                    outR = outR;
-                    break;
-                case 5: // Mid/Side
-                {
-                    const float mid = (outL + outR) * 0.5f;
-                    const float side = (outL - outR) * 0.5f;
-                    outL = mid * linL + side * linR;
-                    outR = mid * linL - side * linR;
-                    break;
-                }
-                case 6: // Solo Mid
-                {
-                    const float mid = (outL + outR) * 0.5f;
-                    outL = mid;
-                    outR = mid;
-                    break;
-                }
-                case 7: // Solo Side
-                {
-                    const float side = (outL - outR) * 0.5f;
-                    outL = side;
-                    outR = -side;
-                    break;
-                }
-                default:
-                    break;
+                const FloatType sum = (outL + outR) * static_cast<FloatType>(0.5);
+                outL = sum;
+                outR = sum;
+                break;
             }
-
-            if (format != 5)
+            case 3: outR = outL; break;
+            case 4: outL = outR; break;
+            case 5:
             {
-                outL *= linL;
-                outR *= linR;
+                const FloatType mid = (outL + outR) * static_cast<FloatType>(0.5);
+                const FloatType side = (outL - outR) * static_cast<FloatType>(0.5);
+                outL = mid * linL + side * linR;
+                outR = mid * linL - side * linR;
+                break;
             }
+            case 6:
+            {
+                const FloatType mid = (outL + outR) * static_cast<FloatType>(0.5);
+                outL = mid;
+                outR = mid;
+                break;
+            }
+            case 7:
+            {
+                const FloatType side = (outL - outR) * static_cast<FloatType>(0.5);
+                outL = side;
+                outR = -side;
+                break;
+            }
+            default: break;
         }
 
-        outputPeak = std::max(outputPeak * peakDecay, std::max(std::abs(outL), std::abs(outR)));
+        if (format != 5)
+        {
+            outL *= linL;
+            outR *= linR;
+        }
 
-        if (autoGainActive && !bypassActive)
+        const float fOutL = static_cast<float>(outL);
+        const float fOutR = static_cast<float>(outR);
+
+        outputPeak = std::max(outputPeak * peakDecay, std::max(std::abs(fOutL), std::abs(fOutR)));
+
+        if (autoGainActive && static_cast<float>(bypassMix) < 0.999f)
         {
             const float targetGain = inputPeak / std::max(outputPeak, 1e-9f);
             autoGain = autoGain * agcDecay + juce::jlimit(0.01f, 100.0f, targetGain) * (1.0f - agcDecay);
-            outL *= autoGain;
-            outR *= autoGain;
+            outL *= static_cast<FloatType>(autoGain);
+            outR *= static_cast<FloatType>(autoGain);
         }
         else
         {
             autoGain = 1.0f;
         }
 
-        outputMeterL = std::max(outputMeterL * peakDecay, std::abs(outL));
-        outputMeterR = std::max(outputMeterR * peakDecay, std::abs(outR));
+        outL = dryL * bypassMix + outL * (static_cast<FloatType>(1) - bypassMix);
+        outR = dryR * bypassMix + outR * (static_cast<FloatType>(1) - bypassMix);
 
-        const float outMid = (outL + outR) * 0.5f;
-        const float outSide = (outL - outR) * 0.5f;
+        const float mOutL = static_cast<float>(outL);
+        const float mOutR = static_cast<float>(outR);
+
+        outputMeterL = std::max(outputMeterL * peakDecay, std::abs(mOutL));
+        outputMeterR = std::max(outputMeterR * peakDecay, std::abs(mOutR));
+
+        const float outMid = (mOutL + mOutR) * 0.5f;
+        const float outSide = (mOutL - mOutR) * 0.5f;
         outputMeterMid = std::max(outputMeterMid * peakDecay, std::abs(outMid));
         outputMeterSide = std::max(outputMeterSide * peakDecay, std::abs(outSide));
 
-        const float sumLR = std::abs(outL) + std::abs(outR) + 1e-9f;
-        const float bal = (std::abs(outR) - std::abs(outL)) / sumLR;
+        const float sumLR = std::abs(mOutL) + std::abs(mOutR) + 1e-9f;
+        const float bal = (std::abs(mOutR) - std::abs(mOutL)) / sumLR;
         balanceSmoothed = balanceSmoothed * corrDecay + bal * (1.0f - corrDecay);
 
-        powerL = powerL * corrDecay + outL * outL * (1.0f - corrDecay);
-        powerR = powerR * corrDecay + outR * outR * (1.0f - corrDecay);
-        corrAccum = corrAccum * corrDecay + outL * outR * (1.0f - corrDecay);
+        powerL = powerL * corrDecay + mOutL * mOutL * (1.0f - corrDecay);
+        powerR = powerR * corrDecay + mOutR * mOutR * (1.0f - corrDecay);
+        corrAccum = corrAccum * corrDecay + mOutL * mOutR * (1.0f - corrDecay);
 
         const float denom = std::sqrt(powerL * powerR) + 1e-9f;
         correlation = std::clamp(corrAccum / denom, -1.0f, 1.0f);
@@ -280,8 +294,8 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         {
             for (int b = 0; b < numCorrBands; ++b)
             {
-                const float bL = bandFilters[b].processL(outL);
-                const float bR = bandFilters[b].processR(outR);
+                const float bL = bandFilters[b].processL(mOutL);
+                const float bR = bandFilters[b].processR(mOutR);
                 auto& bs = bandCorrState[b];
                 bs.powerL = bs.powerL * corrDecay + bL * bL * (1.0f - corrDecay);
                 bs.powerR = bs.powerR * corrDecay + bR * bR * (1.0f - corrDecay);
@@ -293,8 +307,8 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         {
             scopeCounter = 0;
             const int idx = scopeWriteIndex.load();
-            scopeL[idx] = outL;
-            scopeR[idx] = outR;
+            scopeL[idx] = mOutL;
+            scopeR[idx] = mOutR;
             scopeWriteIndex.store((idx + 1) % scopeSize);
         }
 
@@ -316,6 +330,9 @@ void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         bandCorrelation[b].store(std::clamp(bs.corrAccum / d, -1.0f, 1.0f));
     }
 }
+
+template void EPStereoFixerAudioProcessor::processBlockInternal<float>(juce::AudioBuffer<float>&);
+template void EPStereoFixerAudioProcessor::processBlockInternal<double>(juce::AudioBuffer<double>&);
 
 juce::AudioProcessorEditor* EPStereoFixerAudioProcessor::createEditor()
 {
