@@ -44,12 +44,13 @@ Eight exclusive modes for stereo signal routing:
 - **Stereo Balance** — horizontal bar showing L/R balance
 - **Mid/Side levels** — dual vertical bars showing Mid and Side signal levels
 - **Stereo Goniometer** — X/Y scope of the stereo image
+- **Frequency Correlometer** — 12-band phase correlation display (40 Hz – 16 kHz), green = correlated, red = out-of-phase
 
 ### GUI
 
 - Custom look and feel with teal/cyan accent colour scheme
 - Dark theme with rounded section panels (Format, Controls, Meters)
-- Resizable window (default 700x560, up to 2x)
+- Resizable window (default 700x670, up to 2x)
 - English tooltips on all controls
 
 ---
