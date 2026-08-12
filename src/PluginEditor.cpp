@@ -636,6 +636,18 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     setupMeterDbLabel(leftDbLabel);
     setupMeterDbLabel(rightDbLabel);
 
+    auto setupMeterLabel = [this](juce::Label& label, const juce::String& text) {
+        label.setText(text, juce::dontSendNotification);
+        label.setJustificationType(juce::Justification::centred);
+        label.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::plain)));
+        label.setColour(juce::Label::textColourId, Colours::textDim);
+        addAndMakeVisible(label);
+    };
+    setupMeterLabel(phaseLabel, "Phase");
+    setupMeterLabel(balanceLabel, "Balance");
+    setupMeterLabel(scopeLabel, "Scope");
+    setupMeterLabel(corrLabel, "Correlation");
+
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
     updateFormat(choice != nullptr ? choice->getIndex() : 0);
 
@@ -779,6 +791,14 @@ void EPStereoFixerAudioProcessorEditor::resized()
     const int meterBarW = 44;
     leftDbLabel.setBounds(dbRow.removeFromLeft(meterBarW));
     rightDbLabel.setBounds(dbRow.removeFromLeft(meterBarW));
+    dbRow.removeFromLeft(10);
+    phaseLabel.setBounds(dbRow.removeFromLeft(100));
+    dbRow.removeFromLeft(10);
+    balanceLabel.setBounds(dbRow.removeFromLeft(100));
+    dbRow.removeFromLeft(10);
+    dbRow.removeFromLeft(60);
+    dbRow.removeFromLeft(10);
+    scopeLabel.setBounds(dbRow.removeFromLeft(meterRow.getHeight()));
 
     leftMeter.setBounds(meterRow.removeFromLeft(meterBarW).reduced(2, 2));
     rightMeter.setBounds(meterRow.removeFromLeft(meterBarW).reduced(2, 2));
@@ -792,6 +812,8 @@ void EPStereoFixerAudioProcessorEditor::resized()
     const int scopeSz = meterRow.getHeight();
     scope.setBounds(meterRow.removeFromLeft(scopeSz).reduced(2));
 
+    auto corrLabelRow = corrRow.removeFromTop(14);
+    corrLabel.setBounds(corrLabelRow);
     correlometer.setBounds(corrRow.reduced(2));
 }
 

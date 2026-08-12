@@ -185,6 +185,10 @@ private:
     juce::Label gainRightLabel;
     juce::Label leftDbLabel;
     juce::Label rightDbLabel;
+    juce::Label phaseLabel;
+    juce::Label balanceLabel;
+    juce::Label scopeLabel;
+    juce::Label corrLabel;
 
     PeakMeter leftMeter;
     PeakMeter rightMeter;
