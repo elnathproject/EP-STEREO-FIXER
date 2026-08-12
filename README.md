@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml/badge.svg)](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml)
 
-A JUCE-based stereo field manipulation plugin (VST3 / Standalone) inspired by the DaVinci Resolve Stereo Fixer panel. Designed for mixing, mastering and post-production workflows where precise stereo control is needed.
+A JUCE-based stereo field manipulation plugin (VST3 / Standalone). Designed for mixing, mastering and post-production workflows where precise stereo control is needed.
 
 **Developer:** EP | **Category:** Fx | Spatial
 
