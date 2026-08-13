@@ -680,7 +680,7 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
 
     logoImage = juce::ImageFileFormat::loadFrom(BinaryData::logo_png, BinaryData::logo_pngSize);
     logoComponent.setImage(logoImage);
-    logoComponent.setAlpha(0.35f);
+    logoComponent.setAlpha(0.6f);
     addAndMakeVisible(logoComponent);
 
     leftMeter.setTooltip("Output peak level for the left channel");
