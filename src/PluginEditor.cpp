@@ -873,11 +873,10 @@ void EPStereoFixerAudioProcessorEditor::resized()
     corrLabel.setBounds(corrLabelRow);
     correlometer.setBounds(corrRow.reduced(2));
 
-    const int logoMargin = 4;
-    const int logoW = 80;
-    const int logoH = 113;
-    logoComponent.setBounds(metersPanel.getRight() - logoMargin - logoW,
-                            metersPanel.getBottom() - logoMargin - logoH,
+    const int logoW = 40;
+    const int logoH = 57;
+    logoComponent.setBounds(getWidth() - 50 - logoW + 100 - 30 - 50 + 4,
+                            getHeight() - 50 - logoH - 20 - 15 - 30 - 10,
                             logoW, logoH);
 }
 
