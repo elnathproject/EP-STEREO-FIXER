@@ -128,8 +128,8 @@ Pre-built binaries for macOS (arm64, x86_64), Windows and Linux are available on
 Tag a version and push — GitHub Actions will build all platforms and create the release automatically:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 ## License
