@@ -869,20 +869,16 @@ void EPStereoFixerAudioProcessorEditor::resized()
     const int scopeSz = meterRow.getHeight();
     scope.setBounds(meterRow.removeFromLeft(scopeSz).reduced(2));
 
-    auto logoArea = meterRow.removeFromLeft(meterRow.getWidth()).reduced(4);
-    if (logoImage.isValid())
-    {
-        const float aspect = (float)logoImage.getWidth() / (float)logoImage.getHeight();
-        const int logoW = juce::jmin(logoArea.getWidth(), (int)(logoArea.getHeight() * aspect));
-        const int logoH = (int)(logoW / aspect);
-        const int logoX = logoArea.getX() + (logoArea.getWidth() - logoW) / 2;
-        const int logoY = logoArea.getY() + (logoArea.getHeight() - logoH) / 2;
-        logoComponent.setBounds(logoX, logoY, logoW, logoH);
-    }
-
     auto corrLabelRow = corrRow.removeFromTop(14);
     corrLabel.setBounds(corrLabelRow);
     correlometer.setBounds(corrRow.reduced(2));
+
+    const int logoMargin = 4;
+    const int logoW = 80;
+    const int logoH = 113;
+    logoComponent.setBounds(metersPanel.getRight() - logoMargin - logoW,
+                            metersPanel.getBottom() - logoMargin - logoH,
+                            logoW, logoH);
 }
 
 void EPStereoFixerAudioProcessorEditor::setFormat(int index)
