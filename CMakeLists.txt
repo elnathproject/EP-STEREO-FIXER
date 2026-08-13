@@ -27,6 +27,10 @@ juce_add_plugin(EPStereoFixer
     VST3_CATEGORIES "Fx|Spatial"
 )
 
+juce_add_binary_data(EPImages SOURCES
+    resources/logo.png
+)
+
 target_sources(EPStereoFixer PRIVATE
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
@@ -43,4 +47,5 @@ target_compile_definitions(EPStereoFixer PUBLIC
 target_link_libraries(EPStereoFixer PRIVATE
     juce::juce_audio_utils
     juce::juce_dsp
+    EPImages
 )

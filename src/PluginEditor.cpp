@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include <cmath>
+#include "BinaryData.h"
 
 EPLookAndFeel::EPLookAndFeel()
 {
@@ -677,6 +678,11 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     addAndMakeVisible(scope);
     addAndMakeVisible(correlometer);
 
+    logoImage = juce::ImageFileFormat::loadFrom(BinaryData::logo_png, BinaryData::logo_pngSize);
+    logoComponent.setImage(logoImage);
+    logoComponent.setAlpha(0.35f);
+    addAndMakeVisible(logoComponent);
+
     leftMeter.setTooltip("Output peak level for the left channel");
     rightMeter.setTooltip("Output peak level for the right channel");
     phaseMeter.setTooltip("Phase correlation: left = mono, right = out-of-phase");
@@ -862,6 +868,17 @@ void EPStereoFixerAudioProcessorEditor::resized()
     meterRow.removeFromLeft(10);
     const int scopeSz = meterRow.getHeight();
     scope.setBounds(meterRow.removeFromLeft(scopeSz).reduced(2));
+
+    auto logoArea = meterRow.removeFromLeft(meterRow.getWidth()).reduced(4);
+    if (logoImage.isValid())
+    {
+        const float aspect = (float)logoImage.getWidth() / (float)logoImage.getHeight();
+        const int logoW = juce::jmin(logoArea.getWidth(), (int)(logoArea.getHeight() * aspect));
+        const int logoH = (int)(logoW / aspect);
+        const int logoX = logoArea.getX() + (logoArea.getWidth() - logoW) / 2;
+        const int logoY = logoArea.getY() + (logoArea.getHeight() - logoH) / 2;
+        logoComponent.setBounds(logoX, logoY, logoW, logoH);
+    }
 
     auto corrLabelRow = corrRow.removeFromTop(14);
     corrLabel.setBounds(corrLabelRow);

@@ -201,6 +201,8 @@ private:
     MidSideMeter midSideMeter;
     Scope scope;
     Correlometer correlometer;
+    juce::Image logoImage;
+    juce::ImageComponent logoComponent;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> widthAttachment;
