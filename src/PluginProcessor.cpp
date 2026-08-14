@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-EPStereoFixerAudioProcessor::EPStereoFixerAudioProcessor()
+EPStereoMatrixAudioProcessor::EPStereoMatrixAudioProcessor()
     : AudioProcessor(BusesProperties()
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
@@ -9,7 +9,7 @@ EPStereoFixerAudioProcessor::EPStereoFixerAudioProcessor()
 {
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout EPStereoFixerAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout EPStereoMatrixAudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
@@ -53,7 +53,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout EPStereoFixerAudioProcessor:
     return layout;
 }
 
-void EPStereoFixerAudioProcessor::prepareToPlay(double newSampleRate, int)
+void EPStereoMatrixAudioProcessor::prepareToPlay(double newSampleRate, int)
 {
     sampleRate = newSampleRate;
 
@@ -107,7 +107,7 @@ void EPStereoFixerAudioProcessor::prepareToPlay(double newSampleRate, int)
         c.store(0.0f);
 }
 
-void EPStereoFixerAudioProcessor::updateBandFilters()
+void EPStereoMatrixAudioProcessor::updateBandFilters()
 {
     for (int i = 0; i < numCorrBands; ++i)
     {
@@ -132,18 +132,18 @@ void EPStereoFixerAudioProcessor::updateBandFilters()
     }
 }
 
-void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void EPStereoMatrixAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     processBlockInternal(buffer);
 }
 
-void EPStereoFixerAudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer&)
+void EPStereoMatrixAudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer&)
 {
     processBlockInternal(buffer);
 }
 
 template <typename FloatType>
-void EPStereoFixerAudioProcessor::processBlockInternal(juce::AudioBuffer<FloatType>& buffer)
+void EPStereoMatrixAudioProcessor::processBlockInternal(juce::AudioBuffer<FloatType>& buffer)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -331,22 +331,22 @@ void EPStereoFixerAudioProcessor::processBlockInternal(juce::AudioBuffer<FloatTy
     }
 }
 
-template void EPStereoFixerAudioProcessor::processBlockInternal<float>(juce::AudioBuffer<float>&);
-template void EPStereoFixerAudioProcessor::processBlockInternal<double>(juce::AudioBuffer<double>&);
+template void EPStereoMatrixAudioProcessor::processBlockInternal<float>(juce::AudioBuffer<float>&);
+template void EPStereoMatrixAudioProcessor::processBlockInternal<double>(juce::AudioBuffer<double>&);
 
-juce::AudioProcessorEditor* EPStereoFixerAudioProcessor::createEditor()
+juce::AudioProcessorEditor* EPStereoMatrixAudioProcessor::createEditor()
 {
-    return new EPStereoFixerAudioProcessorEditor(*this);
+    return new EPStereoMatrixAudioProcessorEditor(*this);
 }
 
-void EPStereoFixerAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+void EPStereoMatrixAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     auto state = parameters.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
 
-void EPStereoFixerAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
+void EPStereoMatrixAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
 
@@ -356,5 +356,5 @@ void EPStereoFixerAudioProcessor::setStateInformation(const void* data, int size
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new EPStereoFixerAudioProcessor();
+    return new EPStereoMatrixAudioProcessor();
 }

@@ -1,12 +1,12 @@
-# EP STEREO FIXER
+# EP STEREO MATRIX
 
-[![Build](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml/badge.svg)](https://github.com/elnathproject/EP-STEREO-FIXER/actions/workflows/build.yml)
+[![Build](https://github.com/elnathproject/EP-STEREO-MATRIX/actions/workflows/build.yml/badge.svg)](https://github.com/elnathproject/EP-STEREO-MATRIX/actions/workflows/build.yml)
 
 A JUCE-based stereo field manipulation plugin (VST3 / Standalone). Designed for mixing, mastering and post-production workflows where precise stereo control is needed.
 
 **Developer:** EP | **Category:** Fx | Spatial
 
-![EP STEREO FIXER](ep_stereo_fixer.png)
+![EP STEREO MATRIX](ep_stereo_matrix.png)
 
 ---
 
@@ -67,7 +67,7 @@ Clone JUCE anywhere on disk, then point `JUCE_DIR` to it:
 
 ```bash
 export JUCE_DIR="$HOME/JUCE"
-cd EP-STEREO-FIXER
+cd EP-STEREO-MATRIX
 
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
@@ -85,27 +85,27 @@ cmake --build build --config Release
 
 ## Outputs
 
-After building, binaries are in `build/EPStereoFixer_artefacts/Release/`:
+After building, binaries are in `build/EP_STEREO_MATRIX_artefacts/Release/`:
 
-- `VST3/EP STEREO FIXER.vst3`
-- `Standalone/EP STEREO FIXER.app` (macOS) or `.exe` (Windows)
+- `VST3/EP STEREO MATRIX.vst3`
+- `Standalone/EP STEREO MATRIX.app` (macOS) or `.exe` (Windows)
 
 ## Installation
 
 ### macOS
 
 ```bash
-cp -R "build/EPStereoFixer_artefacts/Release/VST3/EP STEREO FIXER.vst3" \
+cp -R "build/EP_STEREO_MATRIX_artefacts/Release/VST3/EP STEREO MATRIX.vst3" \
     "$HOME/Library/Audio/Plug-Ins/VST3/"
 ```
 
 ### Windows
 
-Copy `EP STEREO FIXER.vst3` to `C:\Program Files\Common Files\VST3\`
+Copy `EP STEREO MATRIX.vst3` to `C:\Program Files\Common Files\VST3\`
 
 ### Linux
 
-Copy `EP STEREO FIXER.vst3` to `~/.vst3/`
+Copy `EP STEREO MATRIX.vst3` to `~/.vst3/`
 
 After installing, restart your DAW or run a VST3 re-scan.
 
@@ -121,7 +121,7 @@ After installing, restart your DAW or run a VST3 re-scan.
 
 ## Download
 
-Pre-built binaries for macOS (arm64, x86_64), Windows and Linux are available on the [Releases](https://github.com/elnathproject/EP-STEREO-FIXER/releases) page.
+Pre-built binaries for macOS (arm64, x86_64), Windows and Linux are available on the [Releases](https://github.com/elnathproject/EP-STEREO-MATRIX/releases) page.
 
 ### Creating a release
 

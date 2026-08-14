@@ -1,5 +1,7 @@
 name: Build
 
+run-name: EP STEREO MATRIX build for ${{ github.ref_name }}
+
 on:
   push:
     tags: ['v*']
@@ -13,22 +15,22 @@ jobs:
           - name: macOS-arm64
             os: macos-14
             cmake_args: -DCMAKE_OSX_ARCHITECTURES=arm64
-            artifact: EP-STEREO-FIXER-macOS-arm64
+            artifact: EP-STEREO-MATRIX-macOS-arm64
 
           - name: macOS-x86_64
             os: macos-13
             cmake_args: -DCMAKE_OSX_ARCHITECTURES=x86_64
-            artifact: EP-STEREO-FIXER-macOS-x86_64
+            artifact: EP-STEREO-MATRIX-macOS-x86_64
 
           - name: Windows
             os: windows-latest
             cmake_args: ""
-            artifact: EP-STEREO-FIXER-Windows
+            artifact: EP-STEREO-MATRIX-Windows
 
           - name: Linux
             os: ubuntu-latest
             cmake_args: ""
-            artifact: EP-STEREO-FIXER-Linux
+            artifact: EP-STEREO-MATRIX-Linux
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
@@ -56,9 +58,9 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           mkdir -p staging
-          cp -R "build/EPStereoFixer_artefacts/Release/VST3/EP STEREO FIXER.vst3" staging/
-          if [ -d "build/EPStereoFixer_artefacts/Release/Standalone" ]; then
-            cp -R build/EPStereoFixer_artefacts/Release/Standalone/* staging/ 2>/dev/null || true
+          cp -R "build/EP_STEREO_MATRIX_artefacts/Release/VST3/EP STEREO MATRIX.vst3" staging/
+          if [ -d "build/EP_STEREO_MATRIX_artefacts/Release/Standalone" ]; then
+            cp -R build/EP_STEREO_MATRIX_artefacts/Release/Standalone/* staging/ 2>/dev/null || true
           fi
 
       - name: Prepare artifacts (Windows)
@@ -66,9 +68,9 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging
-          Copy-Item -Recurse "build\EPStereoFixer_artefacts\Release\VST3\EP STEREO FIXER.vst3" staging\
-          if (Test-Path "build\EPStereoFixer_artefacts\Release\Standalone") {
-            Copy-Item -Recurse build\EPStereoFixer_artefacts\Release\Standalone\* staging\ -ErrorAction SilentlyContinue
+          Copy-Item -Recurse "build\EP_STEREO_MATRIX_artefacts\Release\VST3\EP STEREO MATRIX.vst3" staging\
+          if (Test-Path "build\EP_STEREO_MATRIX_artefacts\Release\Standalone") {
+            Copy-Item -Recurse build\EP_STEREO_MATRIX_artefacts\Release\Standalone\* staging\ -ErrorAction SilentlyContinue
           }
 
       - name: Upload artifacts
@@ -101,5 +103,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: EP STEREO MATRIX ${{ github.ref_name }}
+          body: Release build for EP STEREO MATRIX.
+          generate_release_notes: false
           files: '*.zip'

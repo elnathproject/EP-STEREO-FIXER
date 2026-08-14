@@ -4,11 +4,11 @@
 #include <atomic>
 #include <juce_audio_utils/juce_audio_utils.h>
 
-class EPStereoFixerAudioProcessor : public juce::AudioProcessor
+class EPStereoMatrixAudioProcessor : public juce::AudioProcessor
 {
 public:
-    EPStereoFixerAudioProcessor();
-    ~EPStereoFixerAudioProcessor() override = default;
+    EPStereoMatrixAudioProcessor();
+    ~EPStereoMatrixAudioProcessor() override = default;
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
@@ -19,7 +19,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
-    const juce::String getName() const override { return "EP STEREO FIXER"; }
+    const juce::String getName() const override { return "EP STEREO MATRIX"; }
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
@@ -129,5 +129,5 @@ private:
     template <typename FloatType>
     void processBlockInternal(juce::AudioBuffer<FloatType>& buffer);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoFixerAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoMatrixAudioProcessor)
 };

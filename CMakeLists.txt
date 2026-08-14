@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(EPStereoFixer VERSION 1.0.0 LANGUAGES C CXX)
+project(EP_STEREO_MATRIX VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -16,14 +16,14 @@ else()
     FetchContent_MakeAvailable(JUCE)
 endif()
 
-juce_add_plugin(EPStereoFixer
+juce_add_plugin(EP_STEREO_MATRIX
     COMPANY_NAME "EP"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     PLUGIN_MANUFACTURER_CODE EPEP
     PLUGIN_CODE Sfmn
     FORMATS VST3 Standalone
-    PRODUCT_NAME "EP STEREO FIXER"
+    PRODUCT_NAME "EP STEREO MATRIX"
     VST3_CATEGORIES "Fx|Spatial"
 )
 
@@ -31,20 +31,20 @@ juce_add_binary_data(EPImages SOURCES
     resources/logo.png
 )
 
-target_sources(EPStereoFixer PRIVATE
+target_sources(EP_STEREO_MATRIX PRIVATE
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
 )
 
-target_include_directories(EPStereoFixer PRIVATE src)
+target_include_directories(EP_STEREO_MATRIX PRIVATE src)
 
-target_compile_definitions(EPStereoFixer PUBLIC
+target_compile_definitions(EP_STEREO_MATRIX PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
-target_link_libraries(EPStereoFixer PRIVATE
+target_link_libraries(EP_STEREO_MATRIX PRIVATE
     juce::juce_audio_utils
     juce::juce_dsp
     EPImages

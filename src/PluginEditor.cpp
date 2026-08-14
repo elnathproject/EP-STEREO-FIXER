@@ -286,14 +286,14 @@ void PhaseMeter::paint(juce::Graphics& g)
     g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
 }
 
-Correlometer::Correlometer(EPStereoFixerAudioProcessor& p) : processor(p)
+Correlometer::Correlometer(EPStereoMatrixAudioProcessor& p) : processor(p)
 {
     setTooltip("Frequency correlation: green = correlated, red = out-of-phase");
 }
 
 void Correlometer::update()
 {
-    for (int i = 0; i < EPStereoFixerAudioProcessor::numCorrBands; ++i)
+    for (int i = 0; i < EPStereoMatrixAudioProcessor::numCorrBands; ++i)
         values[i] = processor.getBandCorrelation(i);
     repaint();
 }
@@ -321,7 +321,7 @@ void Correlometer::paint(juce::Graphics& g)
     g.drawText("+1", juce::Rectangle<float>(plotR + 2.0f, plotT - 4.0f, 16.0f, 10.0f), juce::Justification::centredLeft);
     g.drawText("-1", juce::Rectangle<float>(plotR + 2.0f, plotB - 6.0f, 16.0f, 10.0f), juce::Justification::centredLeft);
 
-    const int n = EPStereoFixerAudioProcessor::numCorrBands;
+    const int n = EPStereoMatrixAudioProcessor::numCorrBands;
     const float barW = plotW / static_cast<float>(n);
 
     const char* freqLabels[12] = { "40", "80", "160", "315", "630", "1.2k", "2.5k", "4k", "6.3k", "8k", "12k", "16k" };
@@ -394,7 +394,7 @@ void Correlometer::mouseMove(const juce::MouseEvent& event)
     const float plotL = area.getX() + pad;
     const float plotR = area.getRight() - pad;
     const float plotW = plotR - plotL;
-    const int n = EPStereoFixerAudioProcessor::numCorrBands;
+    const int n = EPStereoMatrixAudioProcessor::numCorrBands;
     const float barW = plotW / static_cast<float>(n);
 
     const float mx = static_cast<float>(event.x);
@@ -526,7 +526,7 @@ void MidSideMeter::timerCallback()
     repaint();
 }
 
-Scope::Scope(EPStereoFixerAudioProcessor& p) : processor(p)
+Scope::Scope(EPStereoMatrixAudioProcessor& p) : processor(p)
 {
     setTooltip("Stereo goniometer: X = left, Y = right");
 }
@@ -574,7 +574,7 @@ void Scope::paint(juce::Graphics& g)
     g.drawRoundedRectangle(fullArea, 3.0f, 1.0f);
 }
 
-void EPStereoFixerAudioProcessorEditor::drawPanel(juce::Graphics& g, juce::Rectangle<int> bounds)
+void EPStereoMatrixAudioProcessorEditor::drawPanel(juce::Graphics& g, juce::Rectangle<int> bounds)
 {
     auto b = bounds.toFloat();
     g.setColour(Colours::panelBg);
@@ -583,7 +583,7 @@ void EPStereoFixerAudioProcessorEditor::drawPanel(juce::Graphics& g, juce::Recta
     g.drawRoundedRectangle(b, 8.0f, 1.0f);
 }
 
-void EPStereoFixerAudioProcessorEditor::setupSectionLabel(juce::Label& label, const juce::String& text)
+void EPStereoMatrixAudioProcessorEditor::setupSectionLabel(juce::Label& label, const juce::String& text)
 {
     label.setText(text, juce::dontSendNotification);
     label.setJustificationType(juce::Justification::centredLeft);
@@ -592,12 +592,12 @@ void EPStereoFixerAudioProcessorEditor::setupSectionLabel(juce::Label& label, co
     addAndMakeVisible(label);
 }
 
-EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFixerAudioProcessor& p)
+EPStereoMatrixAudioProcessorEditor::EPStereoMatrixAudioProcessorEditor(EPStereoMatrixAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), scope(audioProcessor), correlometer(audioProcessor)
 {
     setLookAndFeel(&epLookAndFeel);
 
-    titleLabel.setText("EP STEREO FIXER", juce::dontSendNotification);
+    titleLabel.setText("EP STEREO MATRIX", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setFont(juce::Font(juce::FontOptions(22.0f, juce::Font::bold)));
     titleLabel.setColour(juce::Label::textColourId, Colours::accent);
@@ -730,12 +730,12 @@ EPStereoFixerAudioProcessorEditor::EPStereoFixerAudioProcessorEditor(EPStereoFix
     setResizeLimits(700, 670, 1400, 1340);
 }
 
-EPStereoFixerAudioProcessorEditor::~EPStereoFixerAudioProcessorEditor()
+EPStereoMatrixAudioProcessorEditor::~EPStereoMatrixAudioProcessorEditor()
 {
     setLookAndFeel(nullptr);
 }
 
-void EPStereoFixerAudioProcessorEditor::setupGainSlider(juce::Slider& slider, juce::Label& label, const juce::String& name)
+void EPStereoMatrixAudioProcessorEditor::setupGainSlider(juce::Slider& slider, juce::Label& label, const juce::String& name)
 {
     slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 18);
@@ -750,14 +750,14 @@ void EPStereoFixerAudioProcessorEditor::setupGainSlider(juce::Slider& slider, ju
     addAndMakeVisible(label);
 }
 
-void EPStereoFixerAudioProcessorEditor::setupUtilityButton(juce::TextButton& button, const juce::String& tooltip)
+void EPStereoMatrixAudioProcessorEditor::setupUtilityButton(juce::TextButton& button, const juce::String& tooltip)
 {
     button.setClickingTogglesState(true);
     button.setTooltip(tooltip);
     addAndMakeVisible(button);
 }
 
-void EPStereoFixerAudioProcessorEditor::setupMeterDbLabel(juce::Label& label)
+void EPStereoMatrixAudioProcessorEditor::setupMeterDbLabel(juce::Label& label)
 {
     label.setText("-inf", juce::dontSendNotification);
     label.setJustificationType(juce::Justification::centred);
@@ -766,7 +766,7 @@ void EPStereoFixerAudioProcessorEditor::setupMeterDbLabel(juce::Label& label)
     addAndMakeVisible(label);
 }
 
-void EPStereoFixerAudioProcessorEditor::paint(juce::Graphics& g)
+void EPStereoMatrixAudioProcessorEditor::paint(juce::Graphics& g)
 {
     juce::ColourGradient bgGrad(Colours::bg, 0.0f, 0.0f,
                                  Colours::bg.brighter(0.04f), 0.0f, static_cast<float>(getHeight()), false);
@@ -787,7 +787,7 @@ void EPStereoFixerAudioProcessorEditor::paint(juce::Graphics& g)
     drawPanel(g, area);
 }
 
-void EPStereoFixerAudioProcessorEditor::resized()
+void EPStereoMatrixAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds().reduced(12);
 
@@ -880,7 +880,7 @@ void EPStereoFixerAudioProcessorEditor::resized()
                             logoW, logoH);
 }
 
-void EPStereoFixerAudioProcessorEditor::setFormat(int index)
+void EPStereoMatrixAudioProcessorEditor::setFormat(int index)
 {
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
     if (choice != nullptr)
@@ -888,7 +888,7 @@ void EPStereoFixerAudioProcessorEditor::setFormat(int index)
     updateFormat(index);
 }
 
-void EPStereoFixerAudioProcessorEditor::updateFormat(int index)
+void EPStereoMatrixAudioProcessorEditor::updateFormat(int index)
 {
     currentFormat = index;
     stereoButton.setToggleState(index == 0, juce::dontSendNotification);
@@ -914,7 +914,7 @@ void EPStereoFixerAudioProcessorEditor::updateFormat(int index)
     updateGainLabels();
 }
 
-void EPStereoFixerAudioProcessorEditor::updateGainLabels()
+void EPStereoMatrixAudioProcessorEditor::updateGainLabels()
 {
     if (midSideButton.getToggleState())
     {
@@ -933,20 +933,20 @@ void EPStereoFixerAudioProcessorEditor::updateGainLabels()
     }
 }
 
-void EPStereoFixerAudioProcessorEditor::setLinkState(bool active)
+void EPStereoMatrixAudioProcessorEditor::setLinkState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("gainLink"));
     if (param != nullptr) *param = active;
     if (active) syncLinkedGainFromLeft();
 }
 
-void EPStereoFixerAudioProcessorEditor::setAutoGainState(bool active)
+void EPStereoMatrixAudioProcessorEditor::setAutoGainState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("autoGain"));
     if (param != nullptr) *param = active;
 }
 
-void EPStereoFixerAudioProcessorEditor::setInvertLeftState(bool active)
+void EPStereoMatrixAudioProcessorEditor::setInvertLeftState(bool active)
 {
     auto* leftParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertLeft"));
     if (leftParam != nullptr) *leftParam = active;
@@ -959,7 +959,7 @@ void EPStereoFixerAudioProcessorEditor::setInvertLeftState(bool active)
     }
 }
 
-void EPStereoFixerAudioProcessorEditor::setInvertRightState(bool active)
+void EPStereoMatrixAudioProcessorEditor::setInvertRightState(bool active)
 {
     auto* rightParam = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("invertRight"));
     if (rightParam != nullptr) *rightParam = active;
@@ -972,18 +972,18 @@ void EPStereoFixerAudioProcessorEditor::setInvertRightState(bool active)
     }
 }
 
-bool EPStereoFixerAudioProcessorEditor::isMonoFormat(int index) const
+bool EPStereoMatrixAudioProcessorEditor::isMonoFormat(int index) const
 {
     return index == 2 || index == 3 || index == 4 || index == 6;
 }
 
-void EPStereoFixerAudioProcessorEditor::setBypassState(bool active)
+void EPStereoMatrixAudioProcessorEditor::setBypassState(bool active)
 {
     auto* param = dynamic_cast<juce::AudioParameterBool*>(audioProcessor.getAPVTS().getParameter("bypass"));
     if (param != nullptr) *param = active;
 }
 
-void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromLeft()
+void EPStereoMatrixAudioProcessorEditor::syncLinkedGainFromLeft()
 {
     updatingLink = true;
     const float value = gainLeftSlider.getValue();
@@ -993,7 +993,7 @@ void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromLeft()
     updatingLink = false;
 }
 
-void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromRight()
+void EPStereoMatrixAudioProcessorEditor::syncLinkedGainFromRight()
 {
     updatingLink = true;
     const float value = gainRightSlider.getValue();
@@ -1003,7 +1003,7 @@ void EPStereoFixerAudioProcessorEditor::syncLinkedGainFromRight()
     updatingLink = false;
 }
 
-void EPStereoFixerAudioProcessorEditor::timerCallback()
+void EPStereoMatrixAudioProcessorEditor::timerCallback()
 {
     auto* choice = dynamic_cast<juce::AudioParameterChoice*>(audioProcessor.getAPVTS().getParameter("format"));
     if (choice != nullptr) updateFormat(choice->getIndex());

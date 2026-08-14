@@ -90,26 +90,26 @@ class Scope : public juce::Component,
               public juce::SettableTooltipClient
 {
 public:
-    Scope(EPStereoFixerAudioProcessor& p);
+    Scope(EPStereoMatrixAudioProcessor& p);
     void paint(juce::Graphics& g) override;
 
 private:
-    EPStereoFixerAudioProcessor& processor;
+    EPStereoMatrixAudioProcessor& processor;
 };
 
 class Correlometer : public juce::Component,
                      public juce::SettableTooltipClient
 {
 public:
-    Correlometer(EPStereoFixerAudioProcessor& p);
+    Correlometer(EPStereoMatrixAudioProcessor& p);
     void update();
     void paint(juce::Graphics& g) override;
     void mouseMove(const juce::MouseEvent& event) override;
     void mouseExit(const juce::MouseEvent& event) override;
 
 private:
-    EPStereoFixerAudioProcessor& processor;
-    std::array<float, EPStereoFixerAudioProcessor::numCorrBands> values {};
+    EPStereoMatrixAudioProcessor& processor;
+    std::array<float, EPStereoMatrixAudioProcessor::numCorrBands> values {};
     int hoveredBand = -1;
 };
 
@@ -142,18 +142,18 @@ private:
     void timerCallback() override;
 };
 
-class EPStereoFixerAudioProcessorEditor : public juce::AudioProcessorEditor,
+class EPStereoMatrixAudioProcessorEditor : public juce::AudioProcessorEditor,
                                           private juce::Timer
 {
 public:
-    EPStereoFixerAudioProcessorEditor(EPStereoFixerAudioProcessor&);
-    ~EPStereoFixerAudioProcessorEditor() override;
+    EPStereoMatrixAudioProcessorEditor(EPStereoMatrixAudioProcessor&);
+    ~EPStereoMatrixAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    EPStereoFixerAudioProcessor& audioProcessor;
+    EPStereoMatrixAudioProcessor& audioProcessor;
     EPLookAndFeel epLookAndFeel;
 
     juce::Label titleLabel;
@@ -233,5 +233,5 @@ private:
 
     static void drawPanel(juce::Graphics& g, juce::Rectangle<int> bounds);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoFixerAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EPStereoMatrixAudioProcessorEditor)
 };
